@@ -6,6 +6,8 @@
  */
 
 #include "Plane.h"
+#include <iostream>
+using namespace std;
 
 Plane::Plane(PlaneStartParams &params)
 	: startParams(params)
@@ -13,6 +15,7 @@ Plane::Plane(PlaneStartParams &params)
 
 void Plane::Run()
 {
+	cout << startParams.arrivalTime;
 }
 
 Plane* Plane::CreateWithParams(PlaneStartParams &params)
@@ -29,5 +32,9 @@ void* Plane::Start(void *context)
 
 Vec3 Plane::getVelocity()
 {
-	return {1,2,4};
+	return startParams.initialVelocity;
+}
+
+int Plane::getId(){
+	return startParams.id;
 }

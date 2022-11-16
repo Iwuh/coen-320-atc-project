@@ -29,10 +29,21 @@ struct Position {
 	const int Z_CAP=1000;
 };
 
+class Radar{
+private:
+public:
+	Radar(){}
+	void* getPlanes(){
+		cout << "Hello Radar" << endl;
+		return NULL;
+	}
+};
+
 class ComputerSystem
 {
 private:
 	std::map<int, Position> airspace;
+
 	void violationScan(int n){
 
 	}
@@ -51,7 +62,7 @@ private:
 		time_t t = time(NULL);
 		struct tm * p = localtime(&t);
 
-		strftime(s, 1000, "%A, %B %d %Y", p);
+		strftime(s, 1000, "%A, %B %d %Y %HH %MM %SS", p);
 
 		printf("%s ", s);
 	}
@@ -64,31 +75,16 @@ public:
 		printCurrentTime();
 		for (auto const& x : airspace){
 			printf(" %d:%s,%s,%s |", x.first,std::to_string(x.second.x_coord),std::to_string(x.second.y_coord),std::to_string(x.second.z_coord));
-//		    std::cout << x.first  // string (key)
-//		              << ':'
-//		              << x.second.x_coord // string's value
-//		              << x.second.y_coord // string's value
-//		              << x.second.z_coord // string's value
-//		              << std::endl;
 		}
+		cout << endl;
 	}
-	void updateAirspace(int ID, Vec3 vec){
-		Position pos = Position(vec.x, vec.y, vec.z);
-		airspace.insert(pair<int,Position>(ID,pos));
+	void* updateAirspace(Plane* p){
+		Vec3 pv = p->getVelocity();
+		Position velocity = Position(pv.x,pv.y,pv.z);
+		this->airspace.insert(pair<int,Position>(p->getId(),velocity));
+		logState();
+		cout << "Airspace updated in function\n";
+		return NULL;
 	}
 };
 
-int main(int argc, char **argv) {
-	ComputerSystem c = ComputerSystem();
-	for (int i = 1; i< 10; i++){
-		PlaneStartParams pparams = {
-				i,
-				10,
-				{1+i,2+i,3+i},
-				{1+i,2+i,3+i},
-			};
-		Plane* p = Plane::CreateWithParams(pparams);
-		c.updateAirspace(i,p->getVelocity());
-	}
-	c.logState();
-}
