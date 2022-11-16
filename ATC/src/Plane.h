@@ -40,6 +40,7 @@ public:
 
 	// Thread host function to initialize the plane. Use as target for pthread_create.
 	static void* Start(void* context);
+	static Vec3 getVelocity();
 };
 
 #endif /* SRC_PLANE_H_ */

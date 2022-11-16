@@ -14,6 +14,9 @@
 #include <chrono>
 #include <ctime>
 
+#include "Plane.h"
+
+
 using namespace std;
 struct Position {
 	Position() : x_coord(0), y_coord(0), z_coord(0) {}
@@ -60,7 +63,7 @@ public:
 	void logState(){
 		printCurrentTime();
 		for (auto const& x : airspace){
-			printf(" %d:%s,%s,%s |", x.first,std::to_string(x.second.x_coord),std::to_string(x.second.y_coord),std::to_string(x.second.y_coord));
+			printf(" %d:%s,%s,%s |", x.first,std::to_string(x.second.x_coord),std::to_string(x.second.y_coord),std::to_string(x.second.z_coord));
 //		    std::cout << x.first  // string (key)
 //		              << ':'
 //		              << x.second.x_coord // string's value
@@ -69,16 +72,23 @@ public:
 //		              << std::endl;
 		}
 	}
-	void updateAirspace(int ID, Position pos){
+	void updateAirspace(int ID, Vec3 vec){
+		Position pos = Position(vec.x, vec.y, vec.z);
 		airspace.insert(pair<int,Position>(ID,pos));
 	}
 };
 
 int main(int argc, char **argv) {
 	ComputerSystem c = ComputerSystem();
-	Position pos = Position(1,2,3);
 	for (int i = 1; i< 10; i++){
-		c.updateAirspace(i,pos);
+		PlaneStartParams pparams = {
+				i,
+				10,
+				{1+i,2+i,3+i},
+				{1+i,2+i,3+i},
+			};
+		Plane* p = Plane::CreateWithParams(pparams);
+		c.updateAirspace(i,p->getVelocity());
 	}
 	c.logState();
 }

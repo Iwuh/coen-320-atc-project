@@ -26,3 +26,8 @@ void* Plane::Start(void *context)
 	p->Run();
 	return NULL;
 }
+
+Vec3 Plane::getVelocity()
+{
+	return {1,2,4};
+}
