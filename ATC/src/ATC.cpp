@@ -5,7 +5,7 @@
 int main() {
 
 	PlaneStartParams params;
-	params.arrivalTime = 10;
+	params.arrivalTime = 5;
 	params.id = 1;
 	params.initialPosition = {1,1,1};
 	params.initialVelocity = {1,1,1};
@@ -13,5 +13,6 @@ int main() {
 	Plane myPlane(params);
 	pthread_t tid;
 	pthread_create(&tid, NULL, &Plane::start, &myPlane);
+	while (1);
 	return 0;
 }

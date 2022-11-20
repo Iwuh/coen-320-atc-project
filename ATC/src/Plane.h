@@ -11,6 +11,16 @@
 #include <stdlib.h>
 #include <sys/neutrino.h>
 
+// Command to have the plane reply with its current position and velocity.
+#define COMMAND_RADAR_PING 1
+// Command to have the plane thread terminate.
+#define COMMAND_EXIT_THREAD 2
+
+// How often the plane should update its position.
+#define POSITION_UPDATE_INTERVAL_SECONDS 1
+// Used internally to identify when the position update timer has fired.
+#define CODE_TIMER 1
+
 typedef struct
 {
 	int x;
@@ -38,22 +48,21 @@ typedef struct
 	Vec3 currentVelocity;
 } PlanePositionResponse;
 
-#define CODE_TIMER 1
-#define COMMAND_RADAR_PING 1
-#define COMMAND_EXIT_THREAD 2
-
-class Plane {
-
+class Plane
+{
 public:
 	Plane(PlaneStartParams& params);
 	int getChid() const;
 
 private:
 	void run();
+	void listen();
+	void updatePosition();
 
 	PlaneStartParams startParams;
 	Vec3 currentPosition;
 	Vec3 currentVelocity;
+	bool arrived;
 	int chid;
 
 public:

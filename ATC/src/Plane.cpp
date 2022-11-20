@@ -9,12 +9,10 @@
 
 #include <time.h>
 #include <sys/siginfo.h>
-#include <signal.h>
-#include <sys/neutrino.h>
 #include <iostream>
 
 Plane::Plane(PlaneStartParams &params)
-	: startParams(params), currentPosition{-1,-1,-1}, currentVelocity{1,-1,-1}, chid(-1)
+	: startParams(params), currentPosition{-1,-1,-1}, currentVelocity{1,-1,-1}, arrived(false), chid(-1)
 {}
 
 int Plane::getChid() const
@@ -60,6 +58,12 @@ void Plane::run()
 	// Start the timer.
 	timer_settime(updateTimer, 0, &timerValue, NULL);
 
+	// Start listening for messages
+	listen();
+}
+
+void Plane::listen()
+{
 	int rcvid;
 	PlaneCommandMessage msg;
 	while (1)
@@ -73,9 +77,19 @@ void Plane::run()
 			switch (msg.header.code)
 			{
 			case CODE_TIMER:
-				// TODO implement periodic update
+				// The timer fires for the first time when the plane initially enters the airspace.
+				if (!arrived)
+				{
+					arrived = true;
+					currentPosition = startParams.initialPosition;
+					currentVelocity = startParams.initialVelocity;
+					break;
+				}
+				// Once the plane is in the airspace, update its position whenever the timer fires.
+				updatePosition();
 				break;
 			default:
+				std::cout << "Plane " << startParams.id << ": received pulse with unknown code " << msg.header.code << std::endl;
 				break;
 			}
 		}
@@ -85,14 +99,28 @@ void Plane::run()
 			switch (msg.command)
 			{
 			case COMMAND_RADAR_PING:
-				// TODO reply with radar stuff
+			{
+				PlanePositionResponse res{currentPosition, currentVelocity};
+				MsgReply(rcvid, EOK, &res, sizeof(res));
 				break;
+			}
 			case COMMAND_EXIT_THREAD:
 				// Required to allow all threads to gracefully terminate when the program is terminating
 				return;
+			default:
+				std::cout << "Plane " << startParams.id << ": received unknown command " << msg.command << std::endl;
+				MsgError(rcvid, ENOSYS);
+				break;
 			}
 		}
 	}
+}
+
+void Plane::updatePosition()
+{
+	currentPosition.x += currentVelocity.x * POSITION_UPDATE_INTERVAL_SECONDS;
+	currentPosition.y += currentVelocity.y * POSITION_UPDATE_INTERVAL_SECONDS;
+	currentPosition.z += currentVelocity.z * POSITION_UPDATE_INTERVAL_SECONDS;
 }
 
 void* Plane::start(void *context)
