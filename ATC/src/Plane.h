@@ -9,6 +9,7 @@
 #define SRC_PLANE_H_
 
 #include <stdlib.h>
+#include <sys/neutrino.h>
 
 typedef struct
 {
@@ -25,21 +26,39 @@ typedef struct
 	Vec3 initialVelocity;
 } PlaneStartParams;
 
+typedef struct
+{
+	struct _pulse header;
+	int command;
+} PlaneCommandMessage;
+
+typedef struct
+{
+	Vec3 currentPosition;
+	Vec3 currentVelocity;
+} PlanePositionResponse;
+
+#define CODE_TIMER 1
+#define COMMAND_RADAR_PING 1
+#define COMMAND_EXIT_THREAD 2
+
 class Plane {
 
-private:
+public:
 	Plane(PlaneStartParams& params);
+	int getChid() const;
 
-	void Run();
+private:
+	void run();
 
 	PlaneStartParams startParams;
+	Vec3 currentPosition;
+	Vec3 currentVelocity;
+	int chid;
 
 public:
-	// Create a new instance of the Plane class with the specified parameters.
-	static Plane* CreateWithParams(PlaneStartParams& params);
-
 	// Thread host function to initialize the plane. Use as target for pthread_create.
-	static void* Start(void* context);
+	static void* start(void* context);
 };
 
 #endif /* SRC_PLANE_H_ */
