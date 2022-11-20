@@ -42,7 +42,7 @@ void Plane::run()
 	SIGEV_PULSE_INIT(&sigev, coid, SIGEV_PULSE_PRIO_INHERIT, CODE_TIMER, 0);
 
 	timer_t updateTimer;
-	if ((updateTimer = timer_create(CLOCK_MONOTONIC, &sigev, &updateTimer)) == -1)
+	if (timer_create(CLOCK_MONOTONIC, &sigev, &updateTimer) == -1)
 	{
 		std::cout << "Plane " << startParams.id << ": failed to initialize update timer. Exiting thread.";
 		return;
@@ -106,6 +106,7 @@ void Plane::listen()
 			}
 			case COMMAND_EXIT_THREAD:
 				// Required to allow all threads to gracefully terminate when the program is terminating
+				MsgReply(rcvid, EOK, NULL, 0);
 				return;
 			default:
 				std::cout << "Plane " << startParams.id << ": received unknown command " << msg.command << std::endl;
