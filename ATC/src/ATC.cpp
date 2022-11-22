@@ -4,48 +4,59 @@
 #include <string.h>
 #include <sys/dispatch.h>
 #include <pthread.h>
-
-#include "Plane.h"
 #include "computerSystem.cpp"
 
 #define RADAR_ATTACH_POINT "radar"
 #define COMPUTERSYSTEM_ATTACH_POINT "computerSystem"
 
-//void* runServer(void* context){
-//	int ret = server();
-//	return NULL;
-//}
-//
-//void* runClient(void* context){
-//	int ret = client();
-//	return NULL;
-//}
-void* radarRun(void* context){
-	name_attach_t *attach;
-    int rcvid;
-	Radar r = Radar();
-	while(1){
+#include <iostream>
+#include <time.h>
+#include "Plane.h"
 
-   }
-	return NULL;
+int64_t now()
+{
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	return now.tv_sec*1000*1000*1000 + now.tv_nsec;
 }
 
-void* compSystemRun(void* context){
+void planeDemo()
+{
+	PlaneStartParams params
+	{
+		1, // id
+		5, // arrival time
+		{1,1,1}, // initial position
+		{1,1,1} // initial velocity
+	};
+	Plane myPlane(params);
 
-	ComputerSystem cs = ComputerSystem();
-	while(1){
-			cs.logState();
-			sleep(5);
+	pthread_t tid;
+	pthread_create(&tid, NULL, &Plane::start, &myPlane);
+
+	int coid = ConnectAttach(0, 0, myPlane.getChid(), _NTO_SIDE_CHANNEL, 0);
+	int64_t sleepUntil;
+	for (int i = 0; i < 15; i++)
+	{
+		PlaneCommandMessage msg;
+		msg.command = COMMAND_RADAR_PING;
+		PlanePositionResponse res;
+		MsgSend(coid, &msg, sizeof(msg), &res, sizeof(res));
+		std::cout << "Position: <" << res.currentPosition.x << ',' << res.currentPosition.y << ',' << res.currentPosition.z << ">, ";
+		std::cout << "Velocity: <" << res.currentVelocity.x << ',' << res.currentVelocity.y << ',' << res.currentVelocity.z << ">";
+		std::cout << std::endl;
+
+		sleepUntil = now() + 1000*1000*1000;
+		while (now() < sleepUntil);
 	}
-	return NULL;
+	PlaneCommandMessage msg;
+	msg.command = COMMAND_EXIT_THREAD;
+	MsgSend(coid, &msg, sizeof(msg), NULL, 0);
+	pthread_join(tid, NULL);
 }
 
+int main() {
 
-//int main(int argc, char **argv) {
-//	pthread_t compSystemThread, radarThread;
-//
-////	pthread_create(&compSystemThread, NULL, compSystemRun, NULL);
-//	pthread_create(&radarThread, NULL, radarRun, NULL);
-////	pthread_join(compSystemThread, NULL);
-//	pthread_join(radarThread, NULL);
-//}
+	planeDemo();
+	return 0;
+}

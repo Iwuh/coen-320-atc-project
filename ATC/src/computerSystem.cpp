@@ -79,9 +79,9 @@ public:
 		cout << endl;
 	}
 	void* updateAirspace(Plane* p){
-		Vec3 pv = p->getVelocity();
-		Position velocity = Position(pv.x,pv.y,pv.z);
-		this->airspace.insert(pair<int,Position>(p->getId(),velocity));
+//		Vec3 pv = p->getVelocity();
+//		Position velocity = Position(pv.x,pv.y,pv.z);
+//		this->airspace.insert(pair<int,Position>(p->getId(),velocity));
 		logState();
 		cout << "Airspace updated in function\n";
 		return NULL;

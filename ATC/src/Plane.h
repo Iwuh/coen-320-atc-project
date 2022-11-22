@@ -9,6 +9,17 @@
 #define SRC_PLANE_H_
 
 #include <stdlib.h>
+#include <sys/neutrino.h>
+
+// Command to have the plane reply with its current position and velocity.
+#define COMMAND_RADAR_PING 1
+// Command to have the plane thread terminate.
+#define COMMAND_EXIT_THREAD 2
+
+// How often the plane should update its position.
+#define POSITION_UPDATE_INTERVAL_SECONDS 1
+// Used internally to identify when the position update timer has fired.
+#define CODE_TIMER 1
 
 typedef struct
 {
@@ -25,23 +36,38 @@ typedef struct
 	Vec3 initialVelocity;
 } PlaneStartParams;
 
-class Plane {
+typedef struct
+{
+	struct _pulse header;
+	int command;
+} PlaneCommandMessage;
+
+typedef struct
+{
+	Vec3 currentPosition;
+	Vec3 currentVelocity;
+} PlanePositionResponse;
+
+class Plane
+{
+public:
+	Plane(PlaneStartParams& params);
+	int getChid() const;
 
 private:
-	Plane(PlaneStartParams& params);
-
-	void Run();
+	void run();
+	void listen();
+	void updatePosition();
 
 	PlaneStartParams startParams;
+	Vec3 currentPosition;
+	Vec3 currentVelocity;
+	bool arrived;
+	int chid;
 
 public:
-	// Create a new instance of the Plane class with the specified parameters.
-	static Plane* CreateWithParams(PlaneStartParams& params);
-
 	// Thread host function to initialize the plane. Use as target for pthread_create.
-	static void* Start(void* context);
-	Vec3 getVelocity();
-	int getId();
+	static void* start(void* context);
 };
 
 #endif /* SRC_PLANE_H_ */

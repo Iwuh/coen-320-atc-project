@@ -226,15 +226,15 @@ void* runComputerSystem(void *context) {
 	return NULL;
 }
 
-int main(int argc, char **argv) {
-	pthread_t radarCompSystemThread, displayCompSystemThread, radarThread;
-	threadContext radarCommChannel = { RADAR_COMM_CHANNEL };
-	threadContext displayCommChannel = { DISPLAY_COMM_CHANNEL };
-	pthread_create(&radarCompSystemThread, NULL, runRadar, &radarCommChannel);
-	pthread_create(&radarThread, NULL, runComputerSystem, &radarCommChannel);
-//	pthread_create(&displayCompSystemThread, NULL, runRadar, &displayCommChannel);
-//	pthread_create(&radarThread, NULL, runComputerSystem, &displayCommChannel);
-	pthread_join(radarCompSystemThread, NULL);
-	pthread_join(radarThread, NULL);
-//	pthread_join(displayCompSystemThread, NULL);
-}
+//int main(int argc, char **argv) {
+//	pthread_t radarCompSystemThread, displayCompSystemThread, radarThread;
+//	threadContext radarCommChannel = { RADAR_COMM_CHANNEL };
+//	threadContext displayCommChannel = { DISPLAY_COMM_CHANNEL };
+//	pthread_create(&radarCompSystemThread, NULL, runRadar, &radarCommChannel);
+//	pthread_create(&radarThread, NULL, runComputerSystem, &radarCommChannel);
+////	pthread_create(&displayCompSystemThread, NULL, runRadar, &displayCommChannel);
+////	pthread_create(&radarThread, NULL, runComputerSystem, &displayCommChannel);
+//	pthread_join(radarCompSystemThread, NULL);
+//	pthread_join(radarThread, NULL);
+////	pthread_join(displayCompSystemThread, NULL);
+//}
