@@ -12,7 +12,7 @@
 #include <iostream>
 
 Plane::Plane(PlaneStartParams &params)
-	: startParams(params), currentPosition{-1,-1,-1}, currentVelocity{1,-1,-1}, arrived(false), chid(-1)
+	: startParams(params), currentPosition{-1,-1,-1}, currentVelocity{-1,-1,-1}, arrived(false), chid(-1)
 {}
 
 int Plane::getChid() const
@@ -104,6 +104,10 @@ void Plane::listen()
 				MsgReply(rcvid, EOK, &res, sizeof(res));
 				break;
 			}
+			case COMMAND_SET_VELOCITY:
+				currentVelocity = msg.newVelocity;
+				MsgReply(rcvid, EOK, NULL, 0);
+				break;
 			case COMMAND_EXIT_THREAD:
 				// Required to allow all threads to gracefully terminate when the program is terminating
 				MsgReply(rcvid, EOK, NULL, 0);
