@@ -4,10 +4,9 @@
 #include <string.h>
 #include <sys/dispatch.h>
 #include <pthread.h>
-#include "computerSystem.cpp"
 
-#define RADAR_ATTACH_POINT "radar"
-#define COMPUTERSYSTEM_ATTACH_POINT "computerSystem"
+#include "ComputerSystem.h"
+#include "mockRadar.h"
 
 #include <iostream>
 #include <time.h>
@@ -55,8 +54,41 @@ void planeDemo()
 	pthread_join(tid, NULL);
 }
 
+void computerSystemDemo()
+{
+	pthread_t tid, mockRadarTid;
+	ComputerSystem compSystem;
+	Radar mockRadar;
+	pthread_create(&mockRadarTid, NULL, &Radar::start, &mockRadar);
+	compSystem.setRadarChid(mockRadar.getChid());
+	pthread_create(&tid, NULL, &ComputerSystem::start,&compSystem);
+
+	int compSystemCoid = ConnectAttach(0, 0, compSystem.getChid(), _NTO_SIDE_CHANNEL, 0);
+	int mockRadarCoid = ConnectAttach(0, 0, mockRadar.getChid(), _NTO_SIDE_CHANNEL, 0);
+
+		int64_t sleepUntil;
+		for (int i = 0; i < 15; i++)
+		{
+			PlanePositionResponse p = {
+					{1,1,1}, // initial position
+					{1,1,1}
+			};
+			mockRadar.addPlaneToAirspace(i,p);
+			sleepUntil = now() + 1000*1000*1000;
+			while (now() < sleepUntil);
+		}
+		ComputerSystemMessage msg;
+		msg.command = COMMAND_EXIT_THREAD;
+		MsgSend(compSystemCoid, &msg, sizeof(msg), NULL, 0);
+		MsgSend(mockRadarCoid, &msg, sizeof(msg), NULL, 0);
+
+	pthread_join(tid, NULL);
+	pthread_join(mockRadarTid, NULL);
+}
+
 int main() {
 
 	planeDemo();
+	computerSystemDemo();
 	return 0;
 }
