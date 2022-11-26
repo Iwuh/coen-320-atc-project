@@ -13,8 +13,10 @@
 
 // Command to have the plane reply with its current position and velocity.
 #define COMMAND_RADAR_PING 1
+// Command to have the plane change its velocity.
+#define COMMAND_SET_VELOCITY 2
 // Command to have the plane thread terminate.
-#define COMMAND_EXIT_THREAD 2
+#define COMMAND_EXIT_THREAD 3
 
 // How often the plane should update its position.
 #define POSITION_UPDATE_INTERVAL_SECONDS 1
@@ -40,6 +42,7 @@ typedef struct
 {
 	struct _pulse header;
 	int command;
+	Vec3 newVelocity;
 } PlaneCommandMessage;
 
 typedef struct
