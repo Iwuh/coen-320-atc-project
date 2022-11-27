@@ -114,6 +114,7 @@ void ComputerSystem::listen() {
 				break;
 			case COMMAND_EXIT_THREAD:
 				// Required to allow all threads to gracefully terminate when the program is terminating
+				cout << "Received EXIT command";
 				MsgReply(rcvid, EOK, NULL, 0);
 				return;
 			default:
@@ -202,33 +203,37 @@ void ComputerSystem::checkForFutureViolation(
 	// plane1 is: L1 = P1 + aV1 where P1 is a position on the line and V1 is the direction vector
 	// plane2 is: L2 = P2 + bV2 where P2 is a position on the line and V2 is the direction vector
 	// two lines intersect if and only if (V1 X V2) * (P1-P2) = 0
-//	cout << plane1.second.currentPosition.print() << endl;
-//	cout << plane2.second.currentPosition.print() << endl;
 	Vec3 V1 = getDirectionVector(plane1);
 	Vec3 V2 = getDirectionVector(plane2);
-//	cout << "V1 = " << V1.print() << endl;
-//	cout << "V2 = " << V2.print() << endl;
 	Vec3 P1 = plane1.second.currentPosition;
 	Vec3 P2 = plane2.second.currentPosition;
-//	cout << "P1 = " << P1.print() << endl;
-//	cout << "P2 = " << P2.print() << endl;
 	// Lines are also parallel if the cross product is equal to zero. Let's check for this first
-	Vec3 crossProduct = V1.cross(V2);
-//	cout << "Cross product is " << crossProduct.print() << endl;
-	if (crossProduct.equals({0,0,0})){
+	if ( V1.cross(V2).equals({0,0,0})){
 		cout << "Vectors " << plane1.first << " and " << plane2.first << " are parallel" << endl;
 		return; // since vectors are parallel, no collision is possible
 	}
-//	Vec3 diff = P1.diff(P2);
-//	cout << "Diff is " << diff.print()<< endl;
-	int dotProduct = crossProduct.dot(P1.diff(P2));
-//	cout << "dot product: " << std::to_string(dotProduct)<<endl;
-	if (dotProduct != 0){
+	if (V1.cross(V2).dot(P1.diff(P2)) != 0){
 		cout << "Vectors " << plane1.first << " and " << plane2.first << " do not cross" << endl;
 		return; // the lines do not intersect as per formula above
 	}
 	// Raise alert here
 	cout << "ALERT: " << plane1.first << " intersects with " << plane2.first << endl;
+	// to find time t of the intersection we must rewrite the functions of the two lines and
+	// convert it into form: t (V1 X V2) = (P2 - P1) X V2
+	// to isolate t we must do: t = |(P2 - P1) X V2| / | (V1 X V2) |
+	float intersection1 = (P2.diff(P1).cross(V2).magnitude())/(V1.cross(V2).magnitude());
+	cout << "Intersection at " << intersection1 << " seconds" << endl;
+	// sanity check here, the intersection time must match for both computations
+	float intersection2 = (P1.diff(P2).cross(V1).magnitude())/(V2.cross(V1).magnitude());
+	cout << "Intersection at " << intersection2 << " seconds" << endl;
+	if (intersection1 != intersection2){
+		cout << "The intersections computed do not match!";
+		exit(-1);
+	}
+	// By running function intersection = initialLocation + velocity(t) we obtain the point of collision
+	// Note that the return here is truncated to int, for more precision Vec3 needs to be in float
+	cout << "Intersection vector is " << plane1.second.currentVelocity.afterSeconds(intersection1).sum(P1).print() << endl;
+	cout << "Intersection vector is " << plane2.second.currentVelocity.afterSeconds(intersection2).sum(P2).print() << endl;
 }
 
 Vec3 ComputerSystem::getDirectionVector(
@@ -241,7 +246,7 @@ Vec3 ComputerSystem::getDirectionVector(
 Vec3 ComputerSystem::getEndCoordinate(
 		std::pair<int, PlanePositionResponse> plane) {
 	Vec3 initPos = plane.second.currentPosition;
-	Vec3 velocity = plane.second.currentVelocity.afterSeconds(5);
+	Vec3 velocity = plane.second.currentVelocity;
 	return initPos.sum(velocity);
 }
 

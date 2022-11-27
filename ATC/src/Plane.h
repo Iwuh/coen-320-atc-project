@@ -13,6 +13,8 @@
 #include "commandCodes.h"
 #include <string>
 #include <iostream>
+#include <cmath>
+
 using namespace std;
 
 using std::string;
@@ -49,10 +51,13 @@ struct Vec3
 	Vec3 afterSeconds(int secondsPassed){
 		return {x*secondsPassed, y*secondsPassed, z*secondsPassed};
 	}
+	float magnitude(){
+		return sqrt(pow(x,2)+pow(y,2)+pow(z,2));
+	}
 	int x;
 	int y;
 	int z;
-} ;
+};
 
 typedef struct
 {
