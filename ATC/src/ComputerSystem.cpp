@@ -3,6 +3,8 @@
 #include <time.h>
 #include <fstream>
 #include "commandCodes.h"
+#include "constants.h"
+#include "inlineStaticHelpers.h"
 
 ComputerSystem::ComputerSystem() :
 		chid(-1), operatorChid(-1), radarChid(-1), displayChid(-1) {
@@ -89,7 +91,7 @@ void ComputerSystem::listen() {
 	while (1) {
 		// Wait for any type of message.
 		rcvid = MsgReceive(chid, &msg, sizeof(msg), NULL);
-
+		cout << "RCVID IS " << rcvid << " Message command is " << msg.command << endl;
 		if (rcvid == 0) {
 			// Handle internal switches from the pulses of the various timers.
 			switch (msg.header.code) {
@@ -107,6 +109,7 @@ void ComputerSystem::listen() {
 				break;
 			}
 		} else {
+			cout << "COMMAND CODE RECEIVED: " << msg.command << endl;
 			// Handle messages from external processes
 			switch (msg.command) {
 			case COMMAND_OPERATOR_REQUEST:
@@ -125,17 +128,6 @@ void ComputerSystem::listen() {
 			}
 		}
 	}
-}
-
-void ComputerSystem::printCurrentTime() {
-	char s[1000];
-
-	time_t t = time(NULL);
-	struct tm *p = localtime(&t);
-
-	strftime(s, 1000, "%A, %B %d %Y %HH %MM %SS", p);
-
-	printf("%s ", s);
 }
 
 void ComputerSystem::logSystem() {
@@ -182,18 +174,19 @@ void ComputerSystem::violationCheck() {
 		exit(-1); //TODO: Error scenarios
 	}
 
-	for (int i = 0; i < numberOfPlanesInAirspace; i++) {
-		auto const result = airspace.insert(radarResults[i]);
-		if (not result.second) { //This will update the value if the value already existed
-			result.first->second = radarResults[i].second;
-		}
-	}
-	//Perform sequential validation, in case of a collision send out an alert to the operator and an update to the display
-	for (int i = 0; i < numberOfPlanesInAirspace; i++) {
-		for (int j = i + 1; j < numberOfPlanesInAirspace; j++) {
-			checkForFutureViolation(radarResults[i], radarResults[j]);
-		}
-	}
+//	for (int i = 0; i < numberOfPlanesInAirspace; i++) {
+//		auto const result = airspace.insert(radarResults[i]);
+//		if (not result.second) { //This will update the value if the value already existed
+//			result.first->second = radarResults[i].second;
+//		}
+//	}
+//	//Perform sequential validation, in case of a collision send out an alert to the operator and an update to the display
+//	for (int i = 0; i < numberOfPlanesInAirspace; i++) {
+//		for (int j = i + 1; j < numberOfPlanesInAirspace; j++) {
+//			checkForFutureViolation(radarResults[i], radarResults[j]);
+//		}
+//	}
+	cout << "End violation check" << endl;
 }
 
 void ComputerSystem::checkForFutureViolation(
@@ -225,15 +218,13 @@ void ComputerSystem::checkForFutureViolation(
 	cout << "Intersection at " << intersection1 << " seconds" << endl;
 	// sanity check here, the intersection time must match for both computations
 	float intersection2 = (P1.diff(P2).cross(V1).magnitude())/(V2.cross(V1).magnitude());
-	cout << "Intersection at " << intersection2 << " seconds" << endl;
 	if (intersection1 != intersection2){
 		cout << "The intersections computed do not match!";
 		exit(-1);
 	}
-	// By running function intersection = initialLocation + velocity(t) we obtain the point of collision
-	// Note that the return here is truncated to int, for more precision Vec3 needs to be in float
-	cout << "Intersection vector is " << plane1.second.currentVelocity.afterSeconds(intersection1).sum(P1).print() << endl;
-	cout << "Intersection vector is " << plane2.second.currentVelocity.afterSeconds(intersection2).sum(P2).print() << endl;
+	// By substitution t in function: initialLocation + velocity(t) we obtain the point of collision
+	cout << "Intersection vector is " << plane1.second.currentVelocity.scalarMultiplication(intersection1).sum(P1).print() << endl;
+	cout << "Intersection vector is within the airspace: " << BoolToString(vectorWithinAirspaceBounds(plane2.second.currentVelocity.scalarMultiplication(intersection2).sum(P2))) << endl;
 }
 
 Vec3 ComputerSystem::getDirectionVector(

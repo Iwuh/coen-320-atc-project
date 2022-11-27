@@ -47,6 +47,7 @@ void Radar::run() {
 			break;
 		}
 		case COMMAND_EXIT_THREAD:
+			cout << "Received exit command" << endl;
 			// Required to allow all threads to gracefully terminate when the program is terminating
 			MsgReply(rcvid, EOK, NULL, 0);
 			return;

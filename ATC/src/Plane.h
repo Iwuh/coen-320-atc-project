@@ -23,6 +23,7 @@ using std::string;
 // Used internally to identify when the position update timer has fired.
 #define CODE_TIMER 1
 
+
 struct Vec3
 {
 	Vec3 sum(Vec3 b){
@@ -34,12 +35,12 @@ struct Vec3
 	// cross product between 2 3d vectors is
 	// A X B = x(AyBz - AzBy) + y(AzBx - AxBz) + z(AxBy - AyBx)
 	Vec3 cross(Vec3 b){
-		int x1 = y*b.z - z*b.y;
-		int y1 = z*b.x - x*b.z;
-		int z1 = x*b.y - y*b.x;
+		float x1 = y*b.z - z*b.y;
+		float y1 = z*b.x - x*b.z;
+		float z1 = x*b.y - y*b.x;
 		return {x1,y1,z1};
 	}
-	int dot(Vec3 b){
+	float dot(Vec3 b){
 		return x * b.x +y * b.y + z * b.z;
 	}
 	bool equals(Vec3 b){
@@ -48,15 +49,15 @@ struct Vec3
 	string print(){
 		return std::to_string(x) + "," + std::to_string(y) + "," +std::to_string(z);
 	}
-	Vec3 afterSeconds(int secondsPassed){
-		return {x*secondsPassed, y*secondsPassed, z*secondsPassed};
+	Vec3 scalarMultiplication(float scalarMultiplier){
+		return {x*scalarMultiplier, y*scalarMultiplier, z*scalarMultiplier};
 	}
 	float magnitude(){
 		return sqrt(pow(x,2)+pow(y,2)+pow(z,2));
 	}
-	int x;
-	int y;
-	int z;
+	float x;
+	float y;
+	float z;
 };
 
 typedef struct

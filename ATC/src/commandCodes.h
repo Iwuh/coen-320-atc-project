@@ -12,9 +12,7 @@
  * ComputerSystem command codes
  */
 
-#define TIME_RANGE_SECONDS 180
 // To create timers for periodic tasks we need to know the amount
-#define COMPUTER_SYSTEM_NUM_PERIODIC_TASKS 2
 // Timer code to fire to perform violation checks
 #define AIRSPACE_VIOLATION_CONSTRAINT_TIMER 11
 // Timer code to fire to update logfile with airspace state

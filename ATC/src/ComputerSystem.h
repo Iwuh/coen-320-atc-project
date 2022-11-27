@@ -28,7 +28,6 @@ private:
 	void createPeriodicTasks();
 	void logSystem();
 	void violationCheck();
-	void printCurrentTime();
 	void checkForFutureViolation(std::pair<int, PlanePositionResponse> plane1, std::pair<int, PlanePositionResponse> plane2);
 	Vec3 getDirectionVector(std::pair<int, PlanePositionResponse> plane);
 	Vec3 getEndCoordinate(std::pair<int, PlanePositionResponse> plane);
@@ -36,6 +35,7 @@ private:
 	int operatorChid;
 	int radarChid;
 	int displayChid;
+	Vec3 airspaceBounds;
 	std::map<int, PlanePositionResponse> airspace;
 public:
 	static void* start(void *context);
