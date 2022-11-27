@@ -30,13 +30,13 @@ void Radar::run() {
 		}
 		switch (msg.command) {
 		case UPDATE_PLANE_COUNT: {
-			int numberOfPlanesInAirspace = sizeof(radarResults) & INT_MAX;
+			int numberOfPlanesInAirspace = radarResults.size();
 			MsgReply(rcvid, EOK, &numberOfPlanesInAirspace,
 					sizeof(numberOfPlanesInAirspace));
 			break;
 		}
 		case UPDATE_AIRSPACE: {
-			int numberOfPlanesInAirspace = sizeof(radarResults) & INT_MAX;
+			int numberOfPlanesInAirspace = radarResults.size();
 			int i = 0;
 			std::pair<int, PlanePositionResponse> radarResultsArray[numberOfPlanesInAirspace];
 			for (auto const &x : radarResults) {

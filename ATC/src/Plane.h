@@ -10,25 +10,49 @@
 
 #include <stdlib.h>
 #include <sys/neutrino.h>
+#include "commandCodes.h"
+#include <string>
+#include <iostream>
+using namespace std;
 
-// Command to have the plane reply with its current position and velocity.
-#define COMMAND_RADAR_PING 1
-// Command to have the plane change its velocity.
-#define COMMAND_SET_VELOCITY 2
-// Command to have the plane thread terminate.
-#define COMMAND_EXIT_THREAD 3
-
+using std::string;
 // How often the plane should update its position.
 #define POSITION_UPDATE_INTERVAL_SECONDS 1
 // Used internally to identify when the position update timer has fired.
 #define CODE_TIMER 1
 
-typedef struct
+struct Vec3
 {
+	Vec3 sum(Vec3 b){
+		return {x+b.x, y+b.y, z+b.z};
+	}
+	Vec3 diff(Vec3 b){
+		return {x-b.x,y-b.y,z-b.z};
+	}
+	// cross product between 2 3d vectors is
+	// A X B = x(AyBz - AzBy) + y(AzBx - AxBz) + z(AxBy - AyBx)
+	Vec3 cross(Vec3 b){
+		int x1 = y*b.z - z*b.y;
+		int y1 = z*b.x - x*b.z;
+		int z1 = x*b.y - y*b.x;
+		return {x1,y1,z1};
+	}
+	int dot(Vec3 b){
+		return x * b.x +y * b.y + z * b.z;
+	}
+	bool equals(Vec3 b){
+		return (x == b.x && y == b.y && z == b.z);
+	}
+	string print(){
+		return std::to_string(x) + "," + std::to_string(y) + "," +std::to_string(z);
+	}
+	Vec3 afterSeconds(int secondsPassed){
+		return {x*secondsPassed, y*secondsPassed, z*secondsPassed};
+	}
 	int x;
 	int y;
 	int z;
-} Vec3;
+} ;
 
 typedef struct
 {

@@ -2,14 +2,7 @@
 #include <sys/siginfo.h>
 #include <time.h>
 #include <fstream>
-
-#define NUM_PERIODIC_TASKS 2
-#define AIRSPACE_VIOLATION_CONSTRAINT_TIMER 11
-#define LOG_AIRSPACE_TIMER 12
-
-#define OPERATOR_REQUEST 111
-#define UPDATE_PLANE_COUNT 112
-#define UPDATE_AIRSPACE 113
+#include "commandCodes.h"
 
 ComputerSystem::ComputerSystem() :
 		chid(-1), operatorChid(-1), radarChid(-1), displayChid(-1) {
@@ -47,7 +40,7 @@ void ComputerSystem::createPeriodicTasks() {
 	 * LOG_AIRSPACE_TIMER 1
 	 */
 
-	periodicTask periodicTasks[NUM_PERIODIC_TASKS] =
+	periodicTask periodicTasks[COMPUTER_SYSTEM_NUM_PERIODIC_TASKS] =
 			{ { AIRSPACE_VIOLATION_CONSTRAINT_TIMER, 2 }, { LOG_AIRSPACE_TIMER,
 					5 } };
 
@@ -66,7 +59,7 @@ void ComputerSystem::createPeriodicTasks() {
 		return;
 	}
 
-	for (int i = 0; i < NUM_PERIODIC_TASKS; i++) {
+	for (int i = 0; i < COMPUTER_SYSTEM_NUM_PERIODIC_TASKS; i++) {
 		periodicTask pt = periodicTasks[i];
 		struct sigevent sigev;
 		timer_t timer;
@@ -101,7 +94,7 @@ void ComputerSystem::listen() {
 			// Handle internal switches from the pulses of the various timers.
 			switch (msg.header.code) {
 			case LOG_AIRSPACE_TIMER:
-				logSystem();
+//				logSystem();
 				break;
 			case AIRSPACE_VIOLATION_CONSTRAINT_TIMER:
 				violationCheck();
@@ -116,7 +109,7 @@ void ComputerSystem::listen() {
 		} else {
 			// Handle messages from external processes
 			switch (msg.command) {
-			case OPERATOR_REQUEST:
+			case COMMAND_OPERATOR_REQUEST:
 				MsgSend(operatorChid, &msg, sizeof(msg), NULL, 0);
 				break;
 			case COMMAND_EXIT_THREAD:
@@ -169,7 +162,7 @@ void ComputerSystem::logSystem() {
 void ComputerSystem::violationCheck() {
 	printf("Violation check\n");
 	ComputerSystemMessage msg;
-	msg.command = UPDATE_PLANE_COUNT;
+	msg.command = COMMAND_UPDATE_PLANE_COUNT;
 	//Update airspace via message-passing from radar
 	//Request the number of planes first
 	int numberOfPlanesInAirspace = 0;
@@ -181,7 +174,7 @@ void ComputerSystem::violationCheck() {
 	}
 	std::pair<int, PlanePositionResponse> radarResults[numberOfPlanesInAirspace];
 
-	msg.command = UPDATE_AIRSPACE;
+	msg.command = COMMAND_UPDATE_AIRSPACE;
 	if (MsgSend(coid, &msg, sizeof(msg), radarResults, sizeof(radarResults))
 			== -1) {
 		cout << "Couldn't update airspace";
@@ -195,7 +188,61 @@ void ComputerSystem::violationCheck() {
 		}
 	}
 	//Perform sequential validation, in case of a collision send out an alert to the operator and an update to the display
+	for (int i = 0; i < numberOfPlanesInAirspace; i++) {
+		for (int j = i + 1; j < numberOfPlanesInAirspace; j++) {
+			checkForFutureViolation(radarResults[i], radarResults[j]);
+		}
+	}
+}
 
+void ComputerSystem::checkForFutureViolation(
+		std::pair<int, PlanePositionResponse> plane1,
+		std::pair<int, PlanePositionResponse> plane2) {
+	// Assuming that the function of
+	// plane1 is: L1 = P1 + aV1 where P1 is a position on the line and V1 is the direction vector
+	// plane2 is: L2 = P2 + bV2 where P2 is a position on the line and V2 is the direction vector
+	// two lines intersect if and only if (V1 X V2) * (P1-P2) = 0
+//	cout << plane1.second.currentPosition.print() << endl;
+//	cout << plane2.second.currentPosition.print() << endl;
+	Vec3 V1 = getDirectionVector(plane1);
+	Vec3 V2 = getDirectionVector(plane2);
+//	cout << "V1 = " << V1.print() << endl;
+//	cout << "V2 = " << V2.print() << endl;
+	Vec3 P1 = plane1.second.currentPosition;
+	Vec3 P2 = plane2.second.currentPosition;
+//	cout << "P1 = " << P1.print() << endl;
+//	cout << "P2 = " << P2.print() << endl;
+	// Lines are also parallel if the cross product is equal to zero. Let's check for this first
+	Vec3 crossProduct = V1.cross(V2);
+//	cout << "Cross product is " << crossProduct.print() << endl;
+	if (crossProduct.equals({0,0,0})){
+		cout << "Vectors " << plane1.first << " and " << plane2.first << " are parallel" << endl;
+		return; // since vectors are parallel, no collision is possible
+	}
+//	Vec3 diff = P1.diff(P2);
+//	cout << "Diff is " << diff.print()<< endl;
+	int dotProduct = crossProduct.dot(P1.diff(P2));
+//	cout << "dot product: " << std::to_string(dotProduct)<<endl;
+	if (dotProduct != 0){
+		cout << "Vectors " << plane1.first << " and " << plane2.first << " do not cross" << endl;
+		return; // the lines do not intersect as per formula above
+	}
+	// Raise alert here
+	cout << "ALERT: " << plane1.first << " intersects with " << plane2.first << endl;
+}
+
+Vec3 ComputerSystem::getDirectionVector(
+		std::pair<int, PlanePositionResponse> plane) {
+	Vec3 startPoint = plane.second.currentPosition;
+	Vec3 endPoint = getEndCoordinate(plane);
+	return endPoint.diff(startPoint);
+}
+
+Vec3 ComputerSystem::getEndCoordinate(
+		std::pair<int, PlanePositionResponse> plane) {
+	Vec3 initPos = plane.second.currentPosition;
+	Vec3 velocity = plane.second.currentVelocity.afterSeconds(5);
+	return initPos.sum(velocity);
 }
 
 void* ComputerSystem::start(void *context) {

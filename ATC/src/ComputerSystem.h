@@ -4,6 +4,7 @@
 #include "Plane.h"
 
 using namespace std;
+
 typedef struct {
 	struct _pulse header;
 	int command;
@@ -28,6 +29,9 @@ private:
 	void logSystem();
 	void violationCheck();
 	void printCurrentTime();
+	void checkForFutureViolation(std::pair<int, PlanePositionResponse> plane1, std::pair<int, PlanePositionResponse> plane2);
+	Vec3 getDirectionVector(std::pair<int, PlanePositionResponse> plane);
+	Vec3 getEndCoordinate(std::pair<int, PlanePositionResponse> plane);
 	int chid;
 	int operatorChid;
 	int radarChid;

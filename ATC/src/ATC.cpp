@@ -39,7 +39,7 @@ void planeDemo()
 
 	// Ping the plane once per second for 15 seconds.
 	int64_t sleepUntil;
-	for (int i = 0; i < 15; i++)
+	for (int i = 0; i < 1; i++)
 	{
 		PlaneCommandMessage msg;
 		msg.command = COMMAND_RADAR_PING;
@@ -60,7 +60,7 @@ void planeDemo()
 	MsgSend(coid, &changeMsg, sizeof(changeMsg), NULL, 0);
 
 	// Ping the plane for 15 seconds again.
-	for (int i = 0; i < 15; i++)
+	for (int i = 0; i < 1; i++)
 	{
 		PlaneCommandMessage msg;
 		msg.command = COMMAND_RADAR_PING;
@@ -92,18 +92,16 @@ void computerSystemDemo()
 
 	int compSystemCoid = ConnectAttach(0, 0, compSystem.getChid(), _NTO_SIDE_CHANNEL, 0);
 	int mockRadarCoid = ConnectAttach(0, 0, mockRadar.getChid(), _NTO_SIDE_CHANNEL, 0);
-
+	cout << "Expect vectors 1 and 11 to be parallel" << endl;
+	cout << "Expect vectors 1, 11 to intersect with vector 30" << endl;
 		int64_t sleepUntil;
-		for (int i = 0; i < 15; i++)
-		{
-			PlanePositionResponse p = {
-					{1,1,1}, // initial position
-					{1,1,1}
-			};
-			mockRadar.addPlaneToAirspace(i,p);
-			sleepUntil = now() + 1000*1000*1000;
-			while (now() < sleepUntil);
-		}
+		mockRadar.addPlaneToAirspace(1,{{0,10,0},{2,-2,0}});
+		mockRadar.addPlaneToAirspace(20,{{1,12,0},{2,-2,-8}});
+		mockRadar.addPlaneToAirspace(11,{{0,11,0},{2,-2,0}});
+		mockRadar.addPlaneToAirspace(111,{{0,111,0},{2,-2,0}});
+		mockRadar.addPlaneToAirspace(30,{{0,0,0},{2,2,0}});
+		sleepUntil = now() + 10*1000*1000*1000;
+		while (now() < sleepUntil);
 		ComputerSystemMessage msg;
 		msg.command = COMMAND_EXIT_THREAD;
 		MsgSend(compSystemCoid, &msg, sizeof(msg), NULL, 0);
