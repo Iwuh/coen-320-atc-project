@@ -6,6 +6,8 @@
  */
 
 #include "Plane.h"
+#include <iostream>
+using namespace std;
 
 #include <time.h>
 #include <sys/siginfo.h>
