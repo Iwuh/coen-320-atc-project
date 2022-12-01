@@ -27,7 +27,7 @@ bool CommunicationSystem::send(Plane R, Vec3 newVelocity) {
 	int coid; //client id
 	if ((coid == ConnectAttach(0,0,planeChid,0,0)) == -1) {
 		std::cout <<"client connection failed. Exiting thread" << std::endl;
-		return;
+		return false;
 	}
 
 	PlaneCommandMessage msg; //message of the plane class
