@@ -50,7 +50,7 @@ void DataDisplay::receiveMessage() {
 		case COMMAND_MULTIPLE_PLANE:
 		{
 			MsgReply(rcvid, EOK, NULL, 0);
-			for (int i = 0; i < msg.CommandBody.multiple.numberofAircrafts; i++) {
+			for (int i = 0; i < msg.CommandBody.multiple.numberOfAircrafts; i++) {
 			//std::cout <<"Aircraft positions: " <<msg.CommandBody.multiple->positionArray <<"  " <<"Aircraft velocities: " <<msg.commandBody.multiple->velocityArray <<std::endl;
 				std::cout <<"Aircraft " <<i + 1 <<" with position: " <<msg.CommandBody.multiple->positionArray[i] <<" and velocity: " <<msg.CommandBody.multiple->velocity[i] <<std:endl;
 			}
