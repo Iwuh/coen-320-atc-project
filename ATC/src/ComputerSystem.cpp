@@ -26,6 +26,10 @@ void ComputerSystem::setDisplayChid(int id) {
 	displayChid = id;
 }
 
+void ComputerSystem::setCongestionDegreeSeconds(int congestionDegreeSeconds) {
+	this->congestionDegreeSeconds = congestionDegreeSeconds;
+}
+
 void ComputerSystem::run() {
 	createPeriodicTasks();
 	// Start listening for messages
@@ -91,7 +95,6 @@ void ComputerSystem::listen() {
 	while (1) {
 		// Wait for any type of message.
 		rcvid = MsgReceive(chid, &msg, sizeof(msg), NULL);
-		cout << "RCVID IS " << rcvid << " Message command is " << msg.command << endl;
 		if (rcvid == 0) {
 			// Handle internal switches from the pulses of the various timers.
 			switch (msg.header.code) {
@@ -109,7 +112,6 @@ void ComputerSystem::listen() {
 				break;
 			}
 		} else {
-			cout << "COMMAND CODE RECEIVED: " << msg.command << endl;
 			// Handle messages from external processes
 			switch (msg.command) {
 			case COMMAND_OPERATOR_REQUEST:
@@ -174,19 +176,18 @@ void ComputerSystem::violationCheck() {
 		exit(-1); //TODO: Error scenarios
 	}
 
-//	for (int i = 0; i < numberOfPlanesInAirspace; i++) {
-//		auto const result = airspace.insert(radarResults[i]);
-//		if (not result.second) { //This will update the value if the value already existed
-//			result.first->second = radarResults[i].second;
-//		}
-//	}
-//	//Perform sequential validation, in case of a collision send out an alert to the operator and an update to the display
-//	for (int i = 0; i < numberOfPlanesInAirspace; i++) {
-//		for (int j = i + 1; j < numberOfPlanesInAirspace; j++) {
-//			checkForFutureViolation(radarResults[i], radarResults[j]);
-//		}
-//	}
-	cout << "End violation check" << endl;
+	for (int i = 0; i < numberOfPlanesInAirspace; i++) {
+		auto const result = airspace.insert(radarResults[i]);
+		if (not result.second) { //This will update the value if the value already existed
+			result.first->second = radarResults[i].second;
+		}
+	}
+	//Perform sequential validation, in case of a collision send out an alert to the operator and an update to the display
+	for (int i = 0; i < numberOfPlanesInAirspace; i++) {
+		for (int j = i + 1; j < numberOfPlanesInAirspace; j++) {
+			checkForFutureViolation(radarResults[i], radarResults[j]);
+		}
+	}
 }
 
 void ComputerSystem::checkForFutureViolation(

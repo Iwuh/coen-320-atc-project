@@ -22,6 +22,7 @@ public:
 	void setOperatorChid(int id);
 	void setRadarChid(int id);
 	void setDisplayChid(int id);
+	void setCongestionDegreeSeconds(int congestionDegreeSeconds);
 private:
 	void run();
 	void listen();
@@ -36,6 +37,7 @@ private:
 	int radarChid;
 	int displayChid;
 	Vec3 airspaceBounds;
+	int congestionDegreeSeconds;
 	std::map<int, PlanePositionResponse> airspace;
 public:
 	static void* start(void *context);
