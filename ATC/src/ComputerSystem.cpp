@@ -99,7 +99,7 @@ void ComputerSystem::listen() {
 			// Handle internal switches from the pulses of the various timers.
 			switch (msg.header.code) {
 			case LOG_AIRSPACE_TIMER:
-//				logSystem();
+				logSystem();
 				break;
 			case AIRSPACE_VIOLATION_CONSTRAINT_TIMER:
 				violationCheck();
@@ -209,8 +209,8 @@ void ComputerSystem::checkForFutureViolation(
 	if (distancesBetweenPlanes.x <= HORIZONTAL_LIMIT
 			|| distancesBetweenPlanes.y <= HORIZONTAL_LIMIT
 			|| distancesBetweenPlanes.z <= VERTICAL_LIMIT) {
-		// raise alert
-		cout << "ALERT" << endl;
+		// TODO: raise alert
+		return;
 	}
 }
 
