@@ -29,8 +29,7 @@ void DataDisplay::run() {
 		std::cout <<"channel creation failed. Exiting thread." <<std::endl;
 		return;
 	}
-
-
+	receiveMessage(); //start to listen for messages
 }
 
 void DataDisplay::receiveMessage() {
