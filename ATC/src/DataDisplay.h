@@ -13,6 +13,7 @@
 #define COMMAND_ONE_PLANE 1
 #define COMMAND_MULTIPLE_PLANE 2
 #define COMMAND_WARNING 3
+#define COMMAND_GRID 4
 
 
 typedef struct //for one aircraft
@@ -27,6 +28,7 @@ typedef struct //for displaying multiple aircrafts
 	size_t numberOfAircrafts;
 	Vec3* positionArray;
 	Vec3* velocityArray;
+	int* planeIDArray;
 } multipleAircraftDisplay;
 
 typedef struct
@@ -40,23 +42,15 @@ typedef struct
 	};
 } dataDisplayCommandMessage;
 
-
-//typedef struct {
-//	int type; //TODO: define type/value for each incoming message to know what it is (ex: id, velocity, position, etc.)
-//	union {
-//		double flightLevel;
-//		double speed;
-//		double position;
-//		void dataDisplaying(int type);
-//	};
-//} dataDisplay;
-
 class DataDisplay {
 private:
 	void run(); //don't need timers code
 	void receiveMessage();
 
 	int chid;
+
+	Vec3 airspace[50][50]; //creating a 50 by 50 airspace to display
+
 public:
 	DataDisplay();
 	virtual ~DataDisplay();
