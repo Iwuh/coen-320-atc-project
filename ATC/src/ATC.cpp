@@ -1,3 +1,15 @@
+#include <stdio.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/dispatch.h>
+#include <pthread.h>
+#include <chrono>
+#include <thread>
+
+#include "ComputerSystem.h"
+#include "mockRadar.h"
+
 #include <iostream>
 #include <time.h>
 #include "Plane.h"
@@ -29,7 +41,7 @@ void planeDemo()
 
 	// Ping the plane once per second for 15 seconds.
 	int64_t sleepUntil;
-	for (int i = 0; i < 15; i++)
+	for (int i = 0; i < 1; i++)
 	{
 		PlaneCommandMessage msg;
 		msg.command = COMMAND_RADAR_PING;
@@ -50,7 +62,7 @@ void planeDemo()
 	MsgSend(coid, &changeMsg, sizeof(changeMsg), NULL, 0);
 
 	// Ping the plane for 15 seconds again.
-	for (int i = 0; i < 15; i++)
+	for (int i = 0; i < 1; i++)
 	{
 		PlaneCommandMessage msg;
 		msg.command = COMMAND_RADAR_PING;
@@ -71,8 +83,57 @@ void planeDemo()
 	pthread_join(tid, NULL);
 }
 
-int main() {
+void computerSystemDemo()
+{
+	pthread_t tid, mockRadarTid;
+	ComputerSystem compSystem;
+	Radar mockRadar;
+	pthread_create(&mockRadarTid, NULL, &Radar::start, &mockRadar);
+	compSystem.setRadarChid(mockRadar.getChid());
+	pthread_create(&tid, NULL, &ComputerSystem::start,&compSystem);
+	// If I don't sleep here the results are intermittent for the attach
+	std::this_thread::sleep_for(std::chrono::milliseconds(1*1000));
 
-	planeDemo();
+	int compSystemCoid = 0;
+	if ((compSystemCoid = ConnectAttach(0, 0, compSystem.getChid(), 0, 0)) == -1) {
+			std::cout
+					<< "ComputerSystem: failed to attach to. Exiting thread.";
+			return;
+		}
+	int mockRadarCoid = 0 ;
+	if ((mockRadarCoid = ConnectAttach(0, 0, mockRadar.getChid(), _NTO_SIDE_CHANNEL, 0)) == -1) {
+				std::cout
+						<< "MockRadar: failed to attach to. Exiting thread.";
+				return;
+			}
+	cout << "Expect vectors 1 and 11 to be parallel" << endl;
+	cout << "Expect vectors 1, 11 to intersect with vector 30" << endl;
+	int64_t sleepUntil;
+	mockRadar.addPlaneToAirspace(1,{{0,10,0},{2,-2,0}});
+	mockRadar.addPlaneToAirspace(20,{{1,12,0},{2,-2,-8}});
+	mockRadar.addPlaneToAirspace(11,{{0,11,0},{2,-2,0}});
+	mockRadar.addPlaneToAirspace(111,{{0,111,0},{2,-2,0}});
+	mockRadar.addPlaneToAirspace(30,{{0,0,0},{2,2,0}});
+	sleepUntil = now() + 3*1000*1000*1000;
+	std::this_thread::sleep_for(std::chrono::milliseconds(3*1000));
+//	while (now() < sleepUntil);
+	cout << "SENDING EXIT" << endl;
+	ComputerSystemMessage msg;
+	msg.command = COMMAND_EXIT_THREAD;
+	if (MsgSend(compSystemCoid, &msg, sizeof(msg), NULL, 0) == 0){
+		MsgSend(mockRadarCoid, &msg, sizeof(msg), NULL, 0);
+	}
+	else{
+		cout <<"Unable to shut down compSystem"<<endl;
+	}
+
+
+	pthread_join(tid, NULL);
+	pthread_join(mockRadarTid, NULL);
+}
+
+int main() {
+//	planeDemo();
+	computerSystemDemo();
 	return 0;
 }
