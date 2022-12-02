@@ -20,7 +20,7 @@ CommunicationSystem::~CommunicationSystem() {
 }
 
 bool CommunicationSystem::send(Plane R, Vec3 newVelocity) {
-	planeChid = R.getChid(); //for sending to correct plane
+	int planeChid = R.getChid(); //for sending to correct plane
 
 	int sndid; //send id
 
