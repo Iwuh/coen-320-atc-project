@@ -155,7 +155,6 @@ void ComputerSystem::logSystem() {
 }
 
 void ComputerSystem::violationCheck() {
-	printf("Violation check\n");
 	ComputerSystemMessage msg;
 	msg.command = COMMAND_UPDATE_PLANE_COUNT;
 	//Update airspace via message-passing from radar
@@ -199,28 +198,20 @@ void ComputerSystem::checkForFutureViolation(
 	// verify at time T + congestionDegreeSeconds for potential collision range
 	int VERTICAL_LIMIT = 1000;
 	int HORIZONTAL_LIMIT = 3000;
-	Vec3 plane1posInCongestionSeconds = plane1.second.currentPosition.sum(plane1.second.currentVelocity.scalarMultiplication(congestionDegreeSeconds));
-	Vec3 plane2posInCongestionSeconds = plane2.second.currentPosition.sum(plane2.second.currentVelocity.scalarMultiplication(congestionDegreeSeconds));
-	Vec3 distancesBetweenPlanes = plane1posInCongestionSeconds.absoluteDiff(plane2posInCongestionSeconds);
-	if (distancesBetweenPlanes.x <= HORIZONTAL_LIMIT || distancesBetweenPlanes.y <= HORIZONTAL_LIMIT || distancesBetweenPlanes.z <= VERTICAL_LIMIT){
+	Vec3 plane1posInCongestionSeconds = plane1.second.currentPosition.sum(
+			plane1.second.currentVelocity.scalarMultiplication(
+					congestionDegreeSeconds));
+	Vec3 plane2posInCongestionSeconds = plane2.second.currentPosition.sum(
+			plane2.second.currentVelocity.scalarMultiplication(
+					congestionDegreeSeconds));
+	Vec3 distancesBetweenPlanes = plane1posInCongestionSeconds.absoluteDiff(
+			plane2posInCongestionSeconds);
+	if (distancesBetweenPlanes.x <= HORIZONTAL_LIMIT
+			|| distancesBetweenPlanes.y <= HORIZONTAL_LIMIT
+			|| distancesBetweenPlanes.z <= VERTICAL_LIMIT) {
 		// raise alert
 		cout << "ALERT" << endl;
-
 	}
-}
-
-Vec3 ComputerSystem::getDirectionVector(
-		std::pair<int, PlanePositionResponse> plane) {
-	Vec3 startPoint = plane.second.currentPosition;
-	Vec3 endPoint = getEndCoordinate(plane);
-	return endPoint.diff(startPoint);
-}
-
-Vec3 ComputerSystem::getEndCoordinate(
-		std::pair<int, PlanePositionResponse> plane) {
-	Vec3 initPos = plane.second.currentPosition;
-	Vec3 velocity = plane.second.currentVelocity;
-	return initPos.sum(velocity);
 }
 
 void* ComputerSystem::start(void *context) {

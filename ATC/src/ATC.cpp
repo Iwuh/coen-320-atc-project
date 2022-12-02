@@ -106,25 +106,21 @@ void computerSystemDemo()
 						<< "MockRadar: failed to attach to. Exiting thread.";
 				return;
 			}
-	cout << "Expect vectors 1 and 11 to be parallel" << endl;
-	cout << "Expect vectors 1, 11 to intersect with vector 30" << endl;
-	int64_t sleepUntil;
 	mockRadar.addPlaneToAirspace(1,{{0,10,0},{2,-2,0}});
 	mockRadar.addPlaneToAirspace(20,{{1,12,0},{2,-2,-8}});
 	mockRadar.addPlaneToAirspace(11,{{0,11,0},{2,-2,0}});
 	mockRadar.addPlaneToAirspace(111,{{0,111,0},{2,-2,0}});
 	mockRadar.addPlaneToAirspace(30,{{0,0,0},{2,2,0}});
-	sleepUntil = now() + 3*1000*1000*1000;
 	std::this_thread::sleep_for(std::chrono::milliseconds(3*1000));
-//	while (now() < sleepUntil);
 	cout << "SENDING EXIT" << endl;
+
 	ComputerSystemMessage msg;
 	msg.command = COMMAND_EXIT_THREAD;
 	if (MsgSend(compSystemCoid, &msg, sizeof(msg), NULL, 0) == 0){
 		MsgSend(mockRadarCoid, &msg, sizeof(msg), NULL, 0);
 	}
 	else{
-		cout <<"Unable to shut down compSystem"<<endl;
+		cout <<"Unable to shut down compSystem."<<endl;
 	}
 
 
@@ -133,7 +129,7 @@ void computerSystemDemo()
 }
 
 int main() {
-//	planeDemo();
+	planeDemo();
 	computerSystemDemo();
 	return 0;
 }
