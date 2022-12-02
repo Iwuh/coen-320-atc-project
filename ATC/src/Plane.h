@@ -32,6 +32,9 @@ struct Vec3
 	Vec3 diff(Vec3 b){
 		return {x-b.x,y-b.y,z-b.z};
 	}
+	Vec3 absoluteDiff(Vec3 b){
+		return {abs(x-b.x),abs(y-b.y),abs(z-b.z)};
+	}
 	// cross product between 2 3d vectors is
 	// A X B = x(AyBz - AzBy) + y(AzBx - AxBz) + z(AxBy - AyBx)
 	Vec3 cross(Vec3 b){
@@ -49,7 +52,7 @@ struct Vec3
 	string print(){
 		return std::to_string(x) + "," + std::to_string(y) + "," +std::to_string(z);
 	}
-	Vec3 scalarMultiplication(float scalarMultiplier){
+	Vec3 scalarMultiplication(int scalarMultiplier){
 		return {x*scalarMultiplier, y*scalarMultiplier, z*scalarMultiplier};
 	}
 	float magnitude(){

@@ -193,39 +193,20 @@ void ComputerSystem::violationCheck() {
 void ComputerSystem::checkForFutureViolation(
 		std::pair<int, PlanePositionResponse> plane1,
 		std::pair<int, PlanePositionResponse> plane2) {
-	// Assuming that the function of
-	// plane1 is: L1 = P1 + aV1 where P1 is a position on the line and V1 is the direction vector
-	// plane2 is: L2 = P2 + bV2 where P2 is a position on the line and V2 is the direction vector
-	// two lines intersect if and only if (V1 X V2) * (P1-P2) = 0
-	Vec3 V1 = getDirectionVector(plane1);
-	Vec3 V2 = getDirectionVector(plane2);
-	Vec3 P1 = plane1.second.currentPosition;
-	Vec3 P2 = plane2.second.currentPosition;
-	// Lines are also parallel if the cross product is equal to zero. Let's check for this first
-	if ( V1.cross(V2).equals({0,0,0})){
-		cout << "Vectors " << plane1.first << " and " << plane2.first << " are parallel" << endl;
-		return; // since vectors are parallel, no collision is possible
+	// Based on the doc:
+	// for all aircrafts in space, aircrafts must have a distance no less than
+	// 1000 units in height, 3000 units in width/length
+	// verify at time T + congestionDegreeSeconds for potential collision range
+	int VERTICAL_LIMIT = 1000;
+	int HORIZONTAL_LIMIT = 3000;
+	Vec3 plane1posInCongestionSeconds = plane1.second.currentPosition.sum(plane1.second.currentVelocity.scalarMultiplication(congestionDegreeSeconds));
+	Vec3 plane2posInCongestionSeconds = plane2.second.currentPosition.sum(plane2.second.currentVelocity.scalarMultiplication(congestionDegreeSeconds));
+	Vec3 distancesBetweenPlanes = plane1posInCongestionSeconds.absoluteDiff(plane2posInCongestionSeconds);
+	if (distancesBetweenPlanes.x <= HORIZONTAL_LIMIT || distancesBetweenPlanes.y <= HORIZONTAL_LIMIT || distancesBetweenPlanes.z <= VERTICAL_LIMIT){
+		// raise alert
+		cout << "ALERT" << endl;
+
 	}
-	if (V1.cross(V2).dot(P1.diff(P2)) != 0){
-		cout << "Vectors " << plane1.first << " and " << plane2.first << " do not cross" << endl;
-		return; // the lines do not intersect as per formula above
-	}
-	// Raise alert here
-	cout << "ALERT: " << plane1.first << " intersects with " << plane2.first << endl;
-	// to find time t of the intersection we must rewrite the functions of the two lines and
-	// convert it into form: t (V1 X V2) = (P2 - P1) X V2
-	// to isolate t we must do: t = |(P2 - P1) X V2| / | (V1 X V2) |
-	float intersection1 = (P2.diff(P1).cross(V2).magnitude())/(V1.cross(V2).magnitude());
-	cout << "Intersection at " << intersection1 << " seconds" << endl;
-	// sanity check here, the intersection time must match for both computations
-	float intersection2 = (P1.diff(P2).cross(V1).magnitude())/(V2.cross(V1).magnitude());
-	if (intersection1 != intersection2){
-		cout << "The intersections computed do not match!";
-		exit(-1);
-	}
-	// By substitution t in function: initialLocation + velocity(t) we obtain the point of collision
-	cout << "Intersection vector is " << plane1.second.currentVelocity.scalarMultiplication(intersection1).sum(P1).print() << endl;
-	cout << "Intersection vector is within the airspace: " << BoolToString(vectorWithinAirspaceBounds(plane2.second.currentVelocity.scalarMultiplication(intersection2).sum(P2))) << endl;
 }
 
 Vec3 ComputerSystem::getDirectionVector(
