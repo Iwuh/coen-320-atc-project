@@ -44,13 +44,10 @@ typedef struct
 
 class DataDisplay {
 private:
-	void run(); //don't need timers code
+	void run();
 	void receiveMessage();
 
 	int chid;
-
-	Vec3 airspace[50][50]; //creating a 50 by 50 airspace to display
-
 public:
 	DataDisplay();
 	virtual ~DataDisplay();
