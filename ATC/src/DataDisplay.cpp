@@ -67,11 +67,11 @@ void DataDisplay::receiveMessage() {
 		{
 			MsgReply(rcvid, EOK, NULL, 0);
 
-			int rowSize = 5;
-			int columnSize = 10;
-			int cellSize = 20;
+			int rowSize = 100;
+			int columnSize = 100;
+			int cellSize = 1000;
 
-			string grid[rowSize][columnSize]; //grid 100m x 200m with each square being 20m
+			string grid[rowSize][columnSize]; //grid 100000ft x 100000ft with each square being 1000ft
 			//storing into grid
 			for (int i = 0; i < msg.commandBody.multiple.numberOfAircrafts; i++) {
 				for (int j = 0; j < rowSize; j++) {
@@ -79,21 +79,27 @@ void DataDisplay::receiveMessage() {
 						for (int k = 0; k < columnSize; k++) {
 							//only for x
 							if (msg.commandBody.mutiple.positionArray[i].x >= (cellSize * k)  && msg.commandBody.mutiple.positionArray[i].x < (cellSize * (k + 1))) { // if plane in row i is between 0 and 20 not included, add to string
-								grid[j][k] += msg.commandBody.mutiple.planeIDArray[i] + ",";
+								if (grid[j][k] != "") {
+									grid[j][k] += ",";
+								}
+								grid[j][k] += msg.commandBody.mutiple.planeIDArray[i];
 							}
 						}
 					}
 				}
 			}
-
+			//printing grid
 			for (int i = 0; i < rowSize; i++) {
 				cout <<std::endl;
 				for (int j = 0; j < columnSize; j++) {
-					cout <<"| " + grid[i][j] + " ";
+					if (grid[i][j] == "") {
+						std::cout <<"| ";	
+					}
+					else {
+					std::cout <<"|" + grid[i][j];
+					}
 				}
 			}
-
-			//print grid
 			break;
 		}
 		}
