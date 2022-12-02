@@ -22,7 +22,7 @@ public:
 
 private:
 
-	bool send(Plane R, CommuncationSystemCommandMessage m, Vec3 newVelocity); //returns true if sending message is successful and false if not
+	bool send(Plane R, Vec3 newVelocity); //returns true if sending message is successful and false if not
 };
 
 #endif /* SRC_COMMUNICATIONSYSTEM_H_ */
