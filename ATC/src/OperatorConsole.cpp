@@ -9,6 +9,11 @@
 #include <string>
 #include <iostream>
 #include <atomic>
+#include <vector>
+#include <sstream>
+
+pthread_mutex_t OperatorConsole::mutex = PTHREAD_MUTEX_INITIALIZER;
+std::queue<OperatorConsoleResponseMessage> OperatorConsole::responseQueue;
 
 OperatorConsole::OperatorConsole() :
 		chid(-1) {
@@ -27,40 +32,11 @@ void OperatorConsole::run() {
 		return;
 	}
 
-	// Open a client to our own connection to be used for timer pulses and store the handle in coid.
-	int coid;
-	if ((coid = ConnectAttach(0, 0, chid, 0, 0)) == -1) {
-		std::cout
-				<< "Operator console: failed to attach to self. Exiting thread.";
-		return;
-	}
-
-	// Initialize a sigevent to send a pulse.
-	struct sigevent sigev;
-	SIGEV_PULSE_INIT(&sigev, coid, SIGEV_PULSE_PRIO_INHERIT, OPCON_CODE_TIMER,
-			0);
-
-	timer_t updateTimer;
-	if (timer_create(CLOCK_MONOTONIC, &sigev, &updateTimer) == -1) {
-		std::cout
-				<< "Operator console: failed to initialize update timer. Exiting thread.";
-		return;
-	}
-
-	// Set the timer to check for new user commands every second.
-	struct itimerspec timerValue;
-	timerValue.it_value.tv_sec = 1;
-	timerValue.it_value.tv_nsec = 0;
-	timerValue.it_interval.tv_sec = 1;
-	timerValue.it_interval.tv_nsec = 0;
-
-	// Start the timer.
-	timer_settime(updateTimer, 0, &timerValue, NULL);
-
 	pthread_t cinReaderThread;
 	std::atomic_bool cinReaderStopFlag;
 	cinReaderStopFlag = false;
-	pthread_create(&cinReaderThread, NULL, &OperatorConsole::cinRead, &cinReaderStopFlag);
+	pthread_create(&cinReaderThread, NULL, &OperatorConsole::cinRead,
+			&cinReaderStopFlag);
 
 	// Start listening for messages
 	listen();
@@ -74,15 +50,30 @@ void OperatorConsole::listen() {
 	OperatorConsoleCommandMessage msg;
 	while (1) {
 		rcvid = MsgReceive(chid, &msg, sizeof(msg), NULL);
-		switch(msg.systemCommandType)
-		{
-		case OPCON_CONSOLE_COMMAND_GET_USER_COMMAND:
-			MsgReply(rcvid, EOK, NULL, 0); // TODO check head of queue, return if present
+		switch (msg.systemCommandType) {
+		case OPCON_CONSOLE_COMMAND_GET_USER_COMMAND: {
+			pthread_mutex_lock(&mutex);
+			if (responseQueue.empty()) {
+				OperatorConsoleResponseMessage msg;
+				msg.userCommandType = OPCON_USER_COMMAND_NO_COMMAND_AVAILABLE;
+				MsgReply(rcvid, EOK, &msg, sizeof(msg));
+			} else {
+				OperatorConsoleResponseMessage msg = responseQueue.front();
+				responseQueue.pop();
+				MsgReply(rcvid, EOK, &msg, sizeof(msg));
+			}
+			pthread_mutex_unlock(&mutex);
 			break;
+		}
 		case OPCON_CONSOLE_COMMAND_EXIT_THREAD:
 			// Required to allow all threads to gracefully terminate when the program is terminating
 			MsgReply(rcvid, EOK, NULL, 0);
 			return;
+		default:
+			std::cout << "OperatorConsole received unknown command "
+					<< msg.systemCommandType << std::endl;
+			MsgError(rcvid, ENOSYS);
+			break;
 		}
 	}
 }
@@ -93,16 +84,71 @@ void* OperatorConsole::start(void *context) {
 	return NULL;
 }
 
-void* OperatorConsole::cinRead(void* param) {
-	// TODO parse command, store in queue
-	std::atomic_bool *stop = (std::atomic_bool *)param;
+void* OperatorConsole::cinRead(void *param) {
+	// Get the flag we monitor to know when to stop reading
+	std::atomic_bool *stop = (std::atomic_bool*) param;
+	std::string msg;
 	while (!(*stop)) {
-		std::string msg;
+		// Get a command from cin and break it up by spaces
 		std::getline(std::cin, msg);
-		std::cout << "Msg was: " << msg << std::endl;
-		std::cout << "eof is: " << std::cin.eof() << std::endl;
-		std::cout << "fail is: " << std::cin.fail() << std::endl;
-		std::cout << "good is: " << std::cin.good() << std::endl;
+		std::vector<std::string> tokens;
+		tokenize(tokens, msg);
+
+		if (tokens.size() == 0)
+			continue;
+
+		if (tokens[0] == OPCON_COMMAND_STRING_SHOW_PLANE) {
+			if (tokens.size() < 2) {
+				std::cout << "Error: must provide plane number" << std::endl;
+				continue;
+			}
+			try {
+				int planeNum = std::stoi(tokens[1]);
+				OperatorConsoleResponseMessage res;
+				res.userCommandType = OPCON_USER_COMMAND_DISPLAY_PLANE_INFO;
+				res.planeNumber = planeNum;
+				pthread_mutex_lock(&mutex);
+				responseQueue.push(res);
+				pthread_mutex_unlock(&mutex);
+			} catch (std::invalid_argument &e) {
+				std::cout << "Error: not a valid integer" << std::endl;
+			}
+		} else if (tokens[0] == OPCON_COMMAND_STRING_SET_VELOCITY) {
+			if (tokens.size() < 5) {
+				std::cout
+						<< "Error: must provide plane number and 3 velocity components (x,y,z)"
+						<< std::endl;
+				continue;
+			}
+			try {
+				int planeNum = std::stoi(tokens[1]);
+				int components[3];
+				for (size_t i = 0; i < 3; i++) {
+					components[i] = std::stoi(tokens[2 + i]);
+				}
+				Vec3 velocity { components[0], components[1], components[2] };
+				OperatorConsoleResponseMessage res;
+				res.userCommandType = OPCON_USER_COMMAND_SET_PLANE_VELOCITY;
+				res.planeNumber = planeNum;
+				res.newVelocity = velocity;
+				pthread_mutex_lock(&mutex);
+				responseQueue.push(res);
+				pthread_mutex_unlock(&mutex);
+			} catch (std::invalid_argument &e) {
+				std::cout << "Error: not a valid integer" << std::endl;
+			}
+		} else {
+			std::cout << "Unknown command" << std::endl;
+		}
 	}
 	return NULL;
+}
+
+void OperatorConsole::tokenize(std::vector<std::string> &dest,
+		std::string &str) {
+	std::stringstream ss(str);
+	std::string token;
+	while (std::getline(ss, token, ' ')) {
+		dest.push_back(token);
+	}
 }

@@ -92,10 +92,21 @@ void OperatorConsoleDemo()
 	pthread_t tid;
 	pthread_create(&tid, NULL, &OperatorConsole::start, &oc);
 
-	int64_t sleepUntil = now() + 10L*1000L*1000L*1000L;
-	while (now() < sleepUntil);
-
 	int coid = ConnectAttach(0,0,oc.getChid(),_NTO_SIDE_CHANNEL,0);
+
+	int64_t sleepUntil;
+	for (int i = 0; i < 3; i++) {
+		sleepUntil = now() + 10L * 1000L * 1000L * 1000L;
+		while (now() < sleepUntil)
+			;
+
+		OperatorConsoleCommandMessage sndMsg;
+		OperatorConsoleResponseMessage rcvMsg;
+		sndMsg.systemCommandType = OPCON_CONSOLE_COMMAND_GET_USER_COMMAND;
+		MsgSend(coid, &sndMsg, sizeof(sndMsg), &rcvMsg, sizeof(rcvMsg));
+		std::cout << rcvMsg.userCommandType << std::endl;
+	}
+
 	OperatorConsoleCommandMessage msg;
 	msg.systemCommandType = OPCON_CONSOLE_COMMAND_EXIT_THREAD;
 	MsgSend(coid, &msg, sizeof(msg), NULL, 0);
@@ -144,7 +155,8 @@ void computerSystemDemo() {
 }
 
 int main() {
-	planeDemo();
-	computerSystemDemo();
+	//planeDemo();
+	//computerSystemDemo();
+	OperatorConsoleDemo();
 	return 0;
 }
