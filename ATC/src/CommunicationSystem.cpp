@@ -23,8 +23,8 @@ bool CommunicationSystem::send(Plane R, Vec3 newVelocity) {
 	int sndid; //send id
 
 	int coid; //client id
-	if ((coid = ConnectAttach(0,0,planeChid,0,0)) == -1) {
-		std::cout <<"client connection failed. Exiting thread" << std::endl;
+	if ((coid = ConnectAttach(0, 0, planeChid, 0, 0)) == -1) {
+		std::cout << "client connection failed. Exiting thread" << std::endl;
 		return false;
 	}
 
@@ -35,7 +35,7 @@ bool CommunicationSystem::send(Plane R, Vec3 newVelocity) {
 	sndid = MsgSend(coid, &msg, sizeof(msg), NULL, 0); //NULL & 0 since not expecting a reply
 
 	if (sndid == -1) {
-		std::cout <<"Message failed to send!" <<std::endl;
+		std::cout << "Message failed to send!" << std::endl;
 		return false;
 	}
 

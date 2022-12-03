@@ -26,3 +26,16 @@
 #define COMMAND_UPDATE_PLANE_COUNT 112
 // Outbound command to update the plane positions from the radar
 #define COMMAND_UPDATE_AIRSPACE 113
+
+/*
+ * DataDisplay command codes
+ */
+
+// Incoming command to display one plane's information.
+#define COMMAND_ONE_PLANE 1111
+// Incoming command to display multiple planes' information.
+#define COMMAND_MULTIPLE_PLANE 1112
+// Incoming command to warn about an airspace constraint violation.
+#define COMMAND_WARNING 1113
+// Incoming command to display the grid view of the airspace.
+#define COMMAND_GRID 1114

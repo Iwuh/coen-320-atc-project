@@ -10,35 +10,27 @@
 
 #include "Plane.h"
 
-#define COMMAND_ONE_PLANE 1
-#define COMMAND_MULTIPLE_PLANE 2
-#define COMMAND_WARNING 3
-#define COMMAND_GRID 4
-
-
-typedef struct  //for one aircraft
-{
+//for one aircraft
+typedef struct {
 	int aircraftID;
 	Vec3 position; //can read flight level / altitude from z component of position vector
 	Vec3 velocity;
 } oneAircraftDisplay;
 
-typedef struct //for displaying multiple aircrafts
-{
+//for displaying multiple aircrafts
+typedef struct {
 	size_t numberOfAircrafts;
-	Vec3* positionArray;
-	Vec3* velocityArray;
-	int* planeIDArray;
+	Vec3 *positionArray;
+	Vec3 *velocityArray;
+	int *planeIDArray;
 } multipleAircraftDisplay;
 
-union commandBodyUnion
-{
-		oneAircraftDisplay one;
-		multipleAircraftDisplay multiple;
+union commandBodyUnion {
+	oneAircraftDisplay one;
+	multipleAircraftDisplay multiple;
 };
 
-typedef struct
-{
+typedef struct {
 	int commandType; //defining which of union element it is
 	commandBodyUnion commandBody;
 
@@ -55,8 +47,7 @@ public:
 	virtual ~DataDisplay();
 
 	int getChid() const;
-	static void* start(void* context);
-
+	static void* start(void *context);
 
 };
 

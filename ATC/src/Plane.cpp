@@ -13,34 +13,33 @@ using namespace std;
 #include <sys/siginfo.h>
 #include <iostream>
 
-ostream& operator<<(ostream& os, const Vec3& vec) {
+ostream& operator<<(ostream &os, const Vec3 &vec) {
 	std::cout << '<' << vec.x << ", " << vec.y << ", " << vec.z << '>';
 	return os;
 }
 
-Plane::Plane(PlaneStartParams &params)
-	: startParams(params), currentPosition{-1,-1,-1}, currentVelocity{-1,-1,-1}, arrived(false), chid(-1)
-{}
+Plane::Plane(PlaneStartParams &params) :
+		startParams(params), currentPosition { -1, -1, -1 }, currentVelocity {
+				-1, -1, -1 }, arrived(false), chid(-1) {
+}
 
-int Plane::getChid() const
-{
+int Plane::getChid() const {
 	return chid;
 }
 
-void Plane::run()
-{
+void Plane::run() {
 	// Create a new communication channel belonging to the plane and store the handle in chid.
-	if ((chid = ChannelCreate(0)) == -1)
-	{
-		std::cout << "Plane " << startParams.id << ": channel creation failed. Exiting thread." << std::endl;
+	if ((chid = ChannelCreate(0)) == -1) {
+		std::cout << "Plane " << startParams.id
+				<< ": channel creation failed. Exiting thread." << std::endl;
 		return;
 	}
 
 	// Open a client to our own connection to be used for timer pulses and store the handle in coid.
 	int coid;
-	if ((coid = ConnectAttach(0,0,chid,0,0)) == -1)
-	{
-		std::cout << "Plane " << startParams.id << ": failed to attach to self. Exiting thread.";
+	if ((coid = ConnectAttach(0, 0, chid, 0, 0)) == -1) {
+		std::cout << "Plane " << startParams.id
+				<< ": failed to attach to self. Exiting thread.";
 		return;
 	}
 
@@ -49,9 +48,9 @@ void Plane::run()
 	SIGEV_PULSE_INIT(&sigev, coid, SIGEV_PULSE_PRIO_INHERIT, CODE_TIMER, 0);
 
 	timer_t updateTimer;
-	if (timer_create(CLOCK_MONOTONIC, &sigev, &updateTimer) == -1)
-	{
-		std::cout << "Plane " << startParams.id << ": failed to initialize update timer. Exiting thread.";
+	if (timer_create(CLOCK_MONOTONIC, &sigev, &updateTimer) == -1) {
+		std::cout << "Plane " << startParams.id
+				<< ": failed to initialize update timer. Exiting thread.";
 		return;
 	}
 
@@ -69,24 +68,19 @@ void Plane::run()
 	listen();
 }
 
-void Plane::listen()
-{
+void Plane::listen() {
 	int rcvid;
 	PlaneCommandMessage msg;
-	while (1)
-	{
+	while (1) {
 		// Wait for any type of message.
 		rcvid = MsgReceive(chid, &msg, sizeof(msg), NULL);
 
-		if (rcvid == 0)
-		{
+		if (rcvid == 0) {
 			// We've received a pulse.
-			switch (msg.header.code)
-			{
+			switch (msg.header.code) {
 			case CODE_TIMER:
 				// The timer fires for the first time when the plane initially enters the airspace.
-				if (!arrived)
-				{
+				if (!arrived) {
 					arrived = true;
 					currentPosition = startParams.initialPosition;
 					currentVelocity = startParams.initialVelocity;
@@ -96,18 +90,16 @@ void Plane::listen()
 				updatePosition();
 				break;
 			default:
-				std::cout << "Plane " << startParams.id << ": received pulse with unknown code " << msg.header.code << std::endl;
+				std::cout << "Plane " << startParams.id
+						<< ": received pulse with unknown code "
+						<< msg.header.code << std::endl;
 				break;
 			}
-		}
-		else
-		{
+		} else {
 			// We've received a user message.
-			switch (msg.command)
-			{
-			case COMMAND_RADAR_PING:
-			{
-				PlanePositionResponse res{currentPosition, currentVelocity};
+			switch (msg.command) {
+			case COMMAND_RADAR_PING: {
+				PlanePositionResponse res { currentPosition, currentVelocity };
 				MsgReply(rcvid, EOK, &res, sizeof(res));
 				break;
 			}
@@ -120,7 +112,9 @@ void Plane::listen()
 				MsgReply(rcvid, EOK, NULL, 0);
 				return;
 			default:
-				std::cout << "Plane " << startParams.id << ": received unknown command " << msg.command << std::endl;
+				std::cout << "Plane " << startParams.id
+						<< ": received unknown command " << msg.command
+						<< std::endl;
 				MsgError(rcvid, ENOSYS);
 				break;
 			}
@@ -128,16 +122,14 @@ void Plane::listen()
 	}
 }
 
-void Plane::updatePosition()
-{
+void Plane::updatePosition() {
 	currentPosition.x += currentVelocity.x * POSITION_UPDATE_INTERVAL_SECONDS;
 	currentPosition.y += currentVelocity.y * POSITION_UPDATE_INTERVAL_SECONDS;
 	currentPosition.z += currentVelocity.z * POSITION_UPDATE_INTERVAL_SECONDS;
 }
 
-void* Plane::start(void *context)
-{
-	auto p = (Plane*)context;
+void* Plane::start(void *context) {
+	auto p = (Plane*) context;
 	p->run();
 	return NULL;
 }

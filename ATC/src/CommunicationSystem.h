@@ -14,7 +14,6 @@
 
 #include <sys/neutrino.h>
 
-
 class CommunicationSystem {
 public:
 	CommunicationSystem();
