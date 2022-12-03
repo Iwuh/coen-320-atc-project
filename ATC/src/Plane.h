@@ -23,7 +23,7 @@ using std::string;
 // Used internally to identify when the position update timer has fired.
 #define CODE_TIMER 1
 
-struct Vec3 {
+typedef struct Vec3 {
 	Vec3 sum(Vec3 b) {
 		return {x+b.x, y+b.y, z+b.z};
 	}
@@ -40,7 +40,7 @@ struct Vec3 {
 	int x;
 	int y;
 	int z;
-};
+} Vec3;
 
 typedef struct {
 	int id;

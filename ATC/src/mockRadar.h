@@ -1,3 +1,6 @@
+#ifndef SRC_MOCK_RADAR_H
+#define SRC_MOCK_RADAR_H
+
 #include <map>
 #include "Plane.h"
 
@@ -13,3 +16,5 @@ private:
 	std::map<int, PlanePositionResponse> radarResults;
 	int chid;
 };
+
+#endif /* SRC_MOCK_RADAR_H */

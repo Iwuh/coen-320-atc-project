@@ -1,3 +1,6 @@
+#ifndef SRC_COMPUTER_SYSTEM_H
+#define SRC_COMPUTER_SYSTEM_H
+
 #include <sys/neutrino.h>
 #include <iostream>
 #include <map>
@@ -40,3 +43,5 @@ private:
 public:
 	static void* start(void *context);
 };
+
+#endif /* SRC_COMPUTER_PLANE_H */
