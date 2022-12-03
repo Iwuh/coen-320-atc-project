@@ -10,6 +10,8 @@
 
 #include <stdlib.h>
 #include <sys/neutrino.h>
+#include <queue>
+#include <pthread.h>
 #include "Plane.h"
 
 #define OPCON_CONSOLE_COMMAND_GET_USER_COMMAND 1
@@ -24,7 +26,7 @@
 typedef struct
 {
 	struct _pulse header;
-	int query;
+	int systemCommandType;
 } OperatorConsoleCommandMessage;
 
 typedef struct
@@ -38,6 +40,7 @@ typedef struct
 
 class OperatorConsole {
 public:
+	OperatorConsole();
 	int getChid() const;
 
 private:
@@ -45,9 +48,13 @@ private:
 	void listen();
 
 	int chid;
+	std::queue<OperatorConsoleResponseMessage> responseQueue;
+	pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 public:
 	static void* start(void* context);
+private:
+	static void* cinRead(void* param);
 };
 
 #endif /* SRC_OPERATORCONSOLE_H_ */

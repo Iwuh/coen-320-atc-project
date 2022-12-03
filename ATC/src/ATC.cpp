@@ -1,6 +1,7 @@
 #include <iostream>
 #include <time.h>
 #include "Plane.h"
+#include "OperatorConsole.h"
 
 int64_t now()
 {
@@ -71,8 +72,23 @@ void planeDemo()
 	pthread_join(tid, NULL);
 }
 
-int main() {
+void OperatorConsoleDemo()
+{
+	OperatorConsole oc;
+	pthread_t tid;
+	pthread_create(&tid, NULL, &OperatorConsole::start, &oc);
 
-	planeDemo();
+	int64_t sleepUntil = now() + 10L*1000L*1000L*1000L;
+	while (now() < sleepUntil);
+
+	int coid = ConnectAttach(0,0,oc.getChid(),_NTO_SIDE_CHANNEL,0);
+	OperatorConsoleCommandMessage msg;
+	msg.systemCommandType = OPCON_CONSOLE_COMMAND_EXIT_THREAD;
+	MsgSend(coid, &msg, sizeof(msg), NULL, 0);
+}
+
+int main() {
+	//planeDemo();
+	OperatorConsoleDemo();
 	return 0;
 }
