@@ -11,9 +11,16 @@
 #include <sstream>
 #include <fstream>
 
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+
+#include <errno.h>
+
 #include "commandCodes.h"
 
-#define OPCON_LOG_FILE "/atc/commandlog.txt"
+#define OPCON_LOG_FILE "/data/home/qnxuser/atc/commandlog.txt"
 
 pthread_mutex_t OperatorConsole::mutex = PTHREAD_MUTEX_INITIALIZER;
 std::queue<OperatorConsoleResponseMessage> OperatorConsole::responseQueue;
@@ -90,10 +97,12 @@ void* OperatorConsole::start(void *context) {
 void* OperatorConsole::cinRead(void *param) {
 	// Get the flag we monitor to know when to stop reading
 	std::atomic_bool *stop = (std::atomic_bool*) param;
-	std::ofstream commandLog(OPCON_LOG_FILE, std::ios::trunc);
-	if (!commandLog) {
-		std::cout << "Could not open log file" << std::endl;
+
+	int fd = creat("/data/home/qnxuser/commandlog.txt", S_IRUSR | S_IWUSR | S_IXUSR);
+	if (fd == -1) {
+		std::cout << "Failed to open logfile. Errno is " << errno << std::endl;
 	}
+
 	std::string msg;
 	while (!(*stop)) {
 		// Get a command from cin and break it up by spaces
@@ -103,6 +112,18 @@ void* OperatorConsole::cinRead(void *param) {
 
 		if (tokens.size() == 0)
 			continue;
+
+		if (fd != -1) {
+			// Create a char buffer with length equal to the message + 1 for the null terminator.
+			char* buffer = new char[msg.length() + 1];
+			// Copy the C++ string into the char buffer.
+			strncpy(buffer, msg.c_str(), msg.length() + 1);
+			// Write the command to the file with a newline.
+			write(fd, buffer, msg.length() + 1);
+			write(fd, "\n", 1);
+			// Delete the buffer.
+			delete[] buffer;
+		}
 
 		if (tokens[0] == OPCON_COMMAND_STRING_SHOW_PLANE) {
 			if (tokens.size() < 2) {
@@ -150,11 +171,10 @@ void* OperatorConsole::cinRead(void *param) {
 			std::cout << "Unknown command" << std::endl;
 			continue;
 		}
+	}
 
-		// If we get all the way down here, the command is valid, so log it.
-		if (commandLog) {
-			commandLog << msg << std::endl;
-		}
+	if (fd != -1) {
+		close(fd);
 	}
 	return NULL;
 }
