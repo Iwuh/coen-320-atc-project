@@ -92,6 +92,8 @@ void OperatorConsoleDemo()
 	pthread_t tid;
 	pthread_create(&tid, NULL, &OperatorConsole::start, &oc);
 
+	while (oc.getChid() == -1)
+		;
 	int coid = ConnectAttach(0,0,oc.getChid(),_NTO_SIDE_CHANNEL,0);
 
 	int64_t sleepUntil;
@@ -110,6 +112,9 @@ void OperatorConsoleDemo()
 	OperatorConsoleCommandMessage msg;
 	msg.systemCommandType = COMMAND_EXIT_THREAD;
 	MsgSend(coid, &msg, sizeof(msg), NULL, 0);
+	// N.B.: The program will likely hang here until you press enter in the console one more time.
+	// Can't do much about it, it's because std::getline is a blocking operation.
+	pthread_join(tid, NULL);
 }
 
 void computerSystemDemo() {

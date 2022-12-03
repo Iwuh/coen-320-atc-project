@@ -6,13 +6,14 @@
  */
 
 #include "OperatorConsole.h"
-#include <string>
 #include <iostream>
 #include <atomic>
-#include <vector>
 #include <sstream>
+#include <fstream>
 
 #include "commandCodes.h"
+
+#define OPCON_LOG_FILE "/atc/commandlog.txt"
 
 pthread_mutex_t OperatorConsole::mutex = PTHREAD_MUTEX_INITIALIZER;
 std::queue<OperatorConsoleResponseMessage> OperatorConsole::responseQueue;
@@ -89,6 +90,10 @@ void* OperatorConsole::start(void *context) {
 void* OperatorConsole::cinRead(void *param) {
 	// Get the flag we monitor to know when to stop reading
 	std::atomic_bool *stop = (std::atomic_bool*) param;
+	std::ofstream commandLog(OPCON_LOG_FILE, std::ios::trunc);
+	if (!commandLog) {
+		std::cout << "Could not open log file" << std::endl;
+	}
 	std::string msg;
 	while (!(*stop)) {
 		// Get a command from cin and break it up by spaces
@@ -114,6 +119,7 @@ void* OperatorConsole::cinRead(void *param) {
 				pthread_mutex_unlock(&mutex);
 			} catch (std::invalid_argument &e) {
 				std::cout << "Error: not a valid integer" << std::endl;
+				continue;
 			}
 		} else if (tokens[0] == OPCON_COMMAND_STRING_SET_VELOCITY) {
 			if (tokens.size() < 5) {
@@ -138,9 +144,16 @@ void* OperatorConsole::cinRead(void *param) {
 				pthread_mutex_unlock(&mutex);
 			} catch (std::invalid_argument &e) {
 				std::cout << "Error: not a valid integer" << std::endl;
+				continue;
 			}
 		} else {
 			std::cout << "Unknown command" << std::endl;
+			continue;
+		}
+
+		// If we get all the way down here, the command is valid, so log it.
+		if (commandLog) {
+			commandLog << msg << std::endl;
 		}
 	}
 	return NULL;
