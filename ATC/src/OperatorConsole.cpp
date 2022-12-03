@@ -12,6 +12,8 @@
 #include <vector>
 #include <sstream>
 
+#include "commandCodes.h"
+
 pthread_mutex_t OperatorConsole::mutex = PTHREAD_MUTEX_INITIALIZER;
 std::queue<OperatorConsoleResponseMessage> OperatorConsole::responseQueue;
 
@@ -65,7 +67,7 @@ void OperatorConsole::listen() {
 			pthread_mutex_unlock(&mutex);
 			break;
 		}
-		case OPCON_CONSOLE_COMMAND_EXIT_THREAD:
+		case COMMAND_EXIT_THREAD:
 			// Required to allow all threads to gracefully terminate when the program is terminating
 			MsgReply(rcvid, EOK, NULL, 0);
 			return;

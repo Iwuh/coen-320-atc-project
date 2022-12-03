@@ -39,3 +39,13 @@
 #define COMMAND_WARNING 1113
 // Incoming command to display the grid view of the airspace.
 #define COMMAND_GRID 1114
+
+/*
+ * OperatorConsole command codes
+ */
+
+#define OPCON_CONSOLE_COMMAND_GET_USER_COMMAND 11111
+
+#define OPCON_USER_COMMAND_NO_COMMAND_AVAILABLE 11112
+#define OPCON_USER_COMMAND_DISPLAY_PLANE_INFO 11113
+#define OPCON_USER_COMMAND_SET_PLANE_VELOCITY 11113

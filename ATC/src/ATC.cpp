@@ -108,7 +108,7 @@ void OperatorConsoleDemo()
 	}
 
 	OperatorConsoleCommandMessage msg;
-	msg.systemCommandType = OPCON_CONSOLE_COMMAND_EXIT_THREAD;
+	msg.systemCommandType = COMMAND_EXIT_THREAD;
 	MsgSend(coid, &msg, sizeof(msg), NULL, 0);
 }
 
