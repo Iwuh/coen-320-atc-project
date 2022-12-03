@@ -42,6 +42,9 @@ typedef struct Vec3 {
 	int z;
 } Vec3;
 
+// Operator overload allowing Vec3 to be printed to cout using << operator
+ostream& operator<<(ostream& os, const Vec3& vec);
+
 typedef struct {
 	int id;
 	int arrivalTime;

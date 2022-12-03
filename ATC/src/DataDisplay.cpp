@@ -17,15 +17,12 @@ DataDisplay::~DataDisplay() {
 	// TODO Auto-generated destructor stub
 }
 
-DataDisplay::GraphicalPlanes() {
-}
-
 int DataDisplay::getChid() const {
 	return chid;
 }
 
 void DataDisplay::run() {
-	if (chid = ChannelCreate(0) == -1) {
+	if ((chid = ChannelCreate(0)) == -1) {
 		std::cout <<"channel creation failed. Exiting thread." <<std::endl;
 		return;
 	}
@@ -43,15 +40,15 @@ void DataDisplay::receiveMessage() {
 		case COMMAND_ONE_PLANE:
 		{
 			MsgReply(rcvid, EOK, NULL, 0); //sending basic ACK
-			std::cout <<"Aircraft ID: " << msg.CommandBody.one.aircraftID <<"  " <<"Aircraft position: " << msg.commandBody.one.position <<"  " <<"Aircraft velocity " << msg.commandBody.one.velocity <<std::endl;
+			std::cout <<"Aircraft ID: " << msg.commandBody.one.aircraftID <<"  " <<"Aircraft position: " << msg.commandBody.one.position <<"  " <<"Aircraft velocity " << msg.commandBody.one.velocity <<std::endl;
 			break;
 		}
 		case COMMAND_MULTIPLE_PLANE:
 		{
 			MsgReply(rcvid, EOK, NULL, 0);
-			for (int i = 0; i < msg.CommandBody.multiple.numberOfAircrafts; i++) {
+			for (size_t i = 0; i < msg.commandBody.multiple.numberOfAircrafts; i++) {
 			//std::cout <<"Aircraft positions: " <<msg.CommandBody.multiple->positionArray <<"  " <<"Aircraft velocities: " <<msg.commandBody.multiple->velocityArray <<std::endl;
-				std::cout <<"Aircraft " <<i + 1 <<" with position: " <<msg.CommandBody.multiple.positionArray[i] <<" and velocity: " <<msg.CommandBody.multiple.velocity[i] <<std:endl;
+				std::cout <<"Aircraft " <<i + 1 <<" with position: " <<msg.commandBody.multiple.positionArray[i] <<" and velocity: " <<msg.commandBody.multiple.velocityArray[i] <<std::endl;
 			}
 			//TODO: print data for multiple aircrafts
 			break;
@@ -59,7 +56,7 @@ void DataDisplay::receiveMessage() {
 		case COMMAND_WARNING:
 		{
 			MsgReply(rcvid, EOK, NULL, 0);
-			std::cout <<"Airspace separation constraint of aircraft with ID: " <<msg.commandType.one.aircraftID <<" and position: " <<msg.commandType.one.position <<std::endl;
+			std::cout <<"Airspace separation constraint of aircraft with ID: " <<msg.commandBody.one.aircraftID <<" and position: " <<msg.commandBody.one.position <<std::endl;
 			break;
 		}
 		case COMMAND_GRID: //ignoring z-axis, doing x and y (top-view)
@@ -72,16 +69,16 @@ void DataDisplay::receiveMessage() {
 
 			string grid[rowSize][columnSize]; //grid 100000ft x 100000ft with each square being 1000ft
 			//storing into grid
-			for (int i = 0; i < msg.commandBody.multiple.numberOfAircrafts; i++) {
+			for (size_t i = 0; i < msg.commandBody.multiple.numberOfAircrafts; i++) {
 				for (int j = 0; j < rowSize; j++) {
-					if (msg.commandBody.mutiple.positionArray[i].y >= (cellSize * j)  && msg.commandBody.mutiple.positionArray[i].y < (cellSize * (j + 1))) { //checking y
+					if (msg.commandBody.multiple.positionArray[i].y >= (cellSize * j)  && msg.commandBody.multiple.positionArray[i].y < (cellSize * (j + 1))) { //checking y
 						for (int k = 0; k < columnSize; k++) {
 							//only for x
-							if (msg.commandBody.mutiple.positionArray[i].x >= (cellSize * k)  && msg.commandBody.mutiple.positionArray[i].x < (cellSize * (k + 1))) { // if plane in row i is between 0 and 20 not included, add to string
+							if (msg.commandBody.multiple.positionArray[i].x >= (cellSize * k)  && msg.commandBody.multiple.positionArray[i].x < (cellSize * (k + 1))) { // if plane in row i is between 0 and 20 not included, add to string
 								if (grid[j][k] != "") {
 									grid[j][k] += ",";
 								}
-								grid[j][k] += msg.commandBody.mutiple.planeIDArray[i];
+								grid[j][k] += msg.commandBody.multiple.planeIDArray[i];
 							}
 						}
 					}

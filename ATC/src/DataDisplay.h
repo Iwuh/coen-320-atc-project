@@ -16,7 +16,7 @@
 #define COMMAND_GRID 4
 
 
-typedef struct //for one aircraft
+typedef struct  //for one aircraft
 {
 	int aircraftID;
 	Vec3 position; //can read flight level / altitude from z component of position vector
@@ -31,15 +31,17 @@ typedef struct //for displaying multiple aircrafts
 	int* planeIDArray;
 } multipleAircraftDisplay;
 
+union commandBodyUnion
+{
+		oneAircraftDisplay one;
+		multipleAircraftDisplay multiple;
+};
+
 typedef struct
 {
 	int commandType; //defining which of union element it is
-	union commandBody
-	{
-		oneAircraftDisplay one;
-		multipleAircraftDisplay mutiple;
-		string warning;
-	};
+	commandBodyUnion commandBody;
+
 } dataDisplayCommandMessage;
 
 class DataDisplay {
@@ -52,7 +54,7 @@ public:
 	DataDisplay();
 	virtual ~DataDisplay();
 
-	void getChid() const;
+	int getChid() const;
 	static void* start(void* context);
 
 

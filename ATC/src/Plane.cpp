@@ -13,6 +13,11 @@ using namespace std;
 #include <sys/siginfo.h>
 #include <iostream>
 
+ostream& operator<<(ostream& os, const Vec3& vec) {
+	std::cout << '<' << vec.x << ", " << vec.y << ", " << vec.z << '>';
+	return os;
+}
+
 Plane::Plane(PlaneStartParams &params)
 	: startParams(params), currentPosition{-1,-1,-1}, currentVelocity{-1,-1,-1}, arrived(false), chid(-1)
 {}
