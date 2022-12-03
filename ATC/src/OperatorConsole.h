@@ -16,12 +16,8 @@
 #include <string>
 #include "Plane.h"
 
-
-
 #define OPCON_COMMAND_STRING_SHOW_PLANE "showplane"
 #define OPCON_COMMAND_STRING_SET_VELOCITY "setvelocity"
-
-#define OPCON_CODE_TIMER 1
 
 typedef struct {
 	int systemCommandType;

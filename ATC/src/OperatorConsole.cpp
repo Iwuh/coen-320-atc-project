@@ -9,18 +9,13 @@
 #include <iostream>
 #include <atomic>
 #include <sstream>
-#include <fstream>
-
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdlib.h>
-
 #include <errno.h>
 
 #include "commandCodes.h"
-
-#define OPCON_LOG_FILE "/data/home/qnxuser/atc/commandlog.txt"
 
 pthread_mutex_t OperatorConsole::mutex = PTHREAD_MUTEX_INITIALIZER;
 std::queue<OperatorConsoleResponseMessage> OperatorConsole::responseQueue;
