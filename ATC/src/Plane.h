@@ -10,51 +10,62 @@
 
 #include <stdlib.h>
 #include <sys/neutrino.h>
+#include "commandCodes.h"
+#include <string>
+#include <iostream>
+#include <cmath>
 
-// Command to have the plane reply with its current position and velocity.
-#define COMMAND_RADAR_PING 1
-// Command to have the plane change its velocity.
-#define COMMAND_SET_VELOCITY 2
-// Command to have the plane thread terminate.
-#define COMMAND_EXIT_THREAD 3
+using namespace std;
 
+using std::string;
 // How often the plane should update its position.
 #define POSITION_UPDATE_INTERVAL_SECONDS 1
 // Used internally to identify when the position update timer has fired.
 #define CODE_TIMER 1
 
-typedef struct
-{
+typedef struct Vec3 {
+	Vec3 sum(Vec3 b) {
+		return {x+b.x, y+b.y, z+b.z};
+	}
+	Vec3 absoluteDiff(Vec3 b) {
+		return {abs(x-b.x),abs(y-b.y),abs(z-b.z)};
+	}
+	string print() {
+		return std::to_string(x) + "," + std::to_string(y) + ","
+				+ std::to_string(z);
+	}
+	Vec3 scalarMultiplication(int scalarMultiplier) {
+		return {x*scalarMultiplier, y*scalarMultiplier, z*scalarMultiplier};
+	}
 	int x;
 	int y;
 	int z;
 } Vec3;
 
-typedef struct
-{
+// Operator overload allowing Vec3 to be printed to cout using << operator
+ostream& operator<<(ostream &os, const Vec3 &vec);
+
+typedef struct {
 	int id;
 	int arrivalTime;
 	Vec3 initialPosition;
 	Vec3 initialVelocity;
 } PlaneStartParams;
 
-typedef struct
-{
+typedef struct {
 	struct _pulse header;
 	int command;
 	Vec3 newVelocity;
 } PlaneCommandMessage;
 
-typedef struct
-{
+typedef struct {
 	Vec3 currentPosition;
 	Vec3 currentVelocity;
 } PlanePositionResponse;
 
-class Plane
-{
+class Plane {
 public:
-	Plane(PlaneStartParams& params);
+	Plane(PlaneStartParams &params);
 	int getChid() const;
 
 private:
@@ -70,7 +81,7 @@ private:
 
 public:
 	// Thread host function to initialize the plane. Use as target for pthread_create.
-	static void* start(void* context);
+	static void* start(void *context);
 };
 
 #endif /* SRC_PLANE_H_ */

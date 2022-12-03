@@ -1,0 +1,128 @@
+/*
+ * DataDisplay.cpp
+ *
+ *  Created on: Nov. 16, 2022
+ *      Author: coen320
+ */
+
+#include "DataDisplay.h"
+#include <sys/neutrino.h>
+#include "commandCodes.h"
+
+DataDisplay::DataDisplay() {
+	// TODO Auto-generated constructor stub
+	chid = -1;
+}
+
+DataDisplay::~DataDisplay() {
+	// TODO Auto-generated destructor stub
+}
+
+int DataDisplay::getChid() const {
+	return chid;
+}
+
+void DataDisplay::run() {
+	if ((chid = ChannelCreate(0)) == -1) {
+		std::cout << "channel creation failed. Exiting thread." << std::endl;
+		return;
+	}
+	receiveMessage(); //start to listen for messages
+}
+
+void DataDisplay::receiveMessage() {
+	int rcvid; //receive id
+	dataDisplayCommandMessage msg;
+	while (1) {
+
+		rcvid = MsgReceive(chid, &msg, sizeof(msg), NULL);
+
+		switch (msg.commandType) {
+		case COMMAND_ONE_PLANE: {
+			MsgReply(rcvid, EOK, NULL, 0); //sending basic ACK
+			std::cout << "Aircraft ID: " << msg.commandBody.one.aircraftID
+					<< "  " << "Aircraft position: "
+					<< msg.commandBody.one.position << "  "
+					<< "Aircraft velocity " << msg.commandBody.one.velocity
+					<< std::endl;
+			break;
+		}
+		case COMMAND_MULTIPLE_PLANE: {
+			MsgReply(rcvid, EOK, NULL, 0);
+			for (size_t i = 0; i < msg.commandBody.multiple.numberOfAircrafts;
+					i++) {
+				//std::cout <<"Aircraft positions: " <<msg.CommandBody.multiple->positionArray <<"  " <<"Aircraft velocities: " <<msg.commandBody.multiple->velocityArray <<std::endl;
+				std::cout << "Aircraft " << i + 1 << " with position: "
+						<< msg.commandBody.multiple.positionArray[i]
+						<< " and velocity: "
+						<< msg.commandBody.multiple.velocityArray[i]
+						<< std::endl;
+			}
+			//TODO: print data for multiple aircrafts
+			break;
+		}
+		case COMMAND_WARNING: {
+			MsgReply(rcvid, EOK, NULL, 0);
+			std::cout << "Airspace separation constraint of aircraft with ID: "
+					<< msg.commandBody.one.aircraftID << " and position: "
+					<< msg.commandBody.one.position << std::endl;
+			break;
+		}
+		case COMMAND_GRID: //ignoring z-axis, doing x and y (top-view)
+		{
+			MsgReply(rcvid, EOK, NULL, 0);
+
+			int rowSize = 100;
+			int columnSize = 100;
+			int cellSize = 1000;
+
+			string grid[rowSize][columnSize]; //grid 100000ft x 100000ft with each square being 1000ft
+			//storing into grid
+			for (size_t i = 0; i < msg.commandBody.multiple.numberOfAircrafts;
+					i++) {
+				for (int j = 0; j < rowSize; j++) {
+					if (msg.commandBody.multiple.positionArray[i].y
+							>= (cellSize * j)
+							&& msg.commandBody.multiple.positionArray[i].y
+									< (cellSize * (j + 1))) { //checking y
+						for (int k = 0; k < columnSize; k++) {
+							//only for x
+							if (msg.commandBody.multiple.positionArray[i].x
+									>= (cellSize * k)
+									&& msg.commandBody.multiple.positionArray[i].x
+											< (cellSize * (k + 1))) { // if plane in row i is between 0 and 20 not included, add to string
+								if (grid[j][k] != "") {
+									grid[j][k] += ",";
+								}
+								grid[j][k] +=
+										msg.commandBody.multiple.planeIDArray[i];
+							}
+						}
+					}
+				}
+			}
+			//printing grid
+			for (int i = 0; i < rowSize; i++) {
+				cout << std::endl;
+				for (int j = 0; j < columnSize; j++) {
+					if (grid[i][j] == "") {
+						std::cout << "| ";
+					} else {
+						std::cout << "|" + grid[i][j];
+					}
+				}
+			}
+			break;
+		}
+		case COMMAND_EXIT_THREAD:
+			MsgReply(rcvid, EOK, NULL, 0);
+			return;
+		}
+	}
+}
+
+void* DataDisplay::start(void *context) {
+	auto p = (DataDisplay*) context;
+	p->run();
+	return NULL;
+}
