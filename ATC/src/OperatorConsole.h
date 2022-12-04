@@ -18,6 +18,7 @@
 
 #define OPCON_COMMAND_STRING_SHOW_PLANE "showplane"
 #define OPCON_COMMAND_STRING_SET_VELOCITY "setvelocity"
+#define OPCON_COMMAND_STRING_UPDATE_CONGESTION_VALUE "setcongestion"
 
 typedef struct {
 	int systemCommandType;
@@ -29,6 +30,7 @@ typedef struct {
 typedef struct {
 	int userCommandType;
 	int planeNumber;
+	int newCongestionValue;
 	Vec3 newVelocity;
 } OperatorConsoleResponseMessage;
 

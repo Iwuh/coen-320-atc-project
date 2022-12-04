@@ -134,7 +134,7 @@ void ComputerSystem::listen() {
 				break;
 			case COMMAND_EXIT_THREAD:
 				// Required to allow all threads to gracefully terminate when the program is terminating
-				cout << "ComputerSystem: " << "Received EXIT command";
+				cout << "ComputerSystem: " << "Received EXIT command" << endl;
 				MsgReply(rcvid, EOK, NULL, 0);
 				return;
 			default:
@@ -201,6 +201,11 @@ void ComputerSystem::opConCheck() {
 	case OPCON_USER_COMMAND_DISPLAY_PLANE_INFO:
 		sendDisplayCommand(rcvMsg.planeNumber); // open disp channel and send msg
 		break;
+	case OPCON_USER_COMMAND_UPDATE_CONGESTION_VALUE:
+		this->congestionDegreeSeconds = rcvMsg.newCongestionValue;
+		cout << "ComputerSystem: " << "New congestion value set to "
+				<< congestionDegreeSeconds << endl;
+		break;
 	case OPCON_USER_COMMAND_SET_PLANE_VELOCITY:
 		sendVelocityUpdateToComm(rcvMsg.planeNumber, rcvMsg.newVelocity); // open comm channel and send msg
 		break;
@@ -235,11 +240,24 @@ void ComputerSystem::sendVelocityUpdateToComm(int planeNumber,
 		Vec3 newVelocity) {
 	// Request radar for the plane for sanity purposes
 	// Open connection to comm and send update message
-	cout << "ComputerSystem: " << "Sending message to comm" << endl;
+	PlanePositionResponse out;
+	if (radar.pingPlane(planeNumber, &out)) {
+		if (commSystem.send(planeNumber, newVelocity)) {
+			cout << "ComputerSystem: " << "Plane " << planeNumber
+					<< " velocity updated." << endl;
+		} else {
+			cout << "ComputerSystem: couldn't update velocity for plane "
+					<< planeNumber << endl;
+		}
+	} else {
+		cout
+				<< "The plane requested to update the velocity is not found in the airspace"
+				<< endl;
+	}
+
 }
 
 void ComputerSystem::violationCheck() {
-	cout << "ComputerSystem: " << "Running violation check..." << endl;
 	this->airspace = radar.pingAirspace();
 	//Perform sequential validation, in case of a collision send out an alert to the operator and an update to the display
 	for (size_t i = 0; i < airspace.size(); i++) {
@@ -289,7 +307,6 @@ void ComputerSystem::checkForFutureViolation(
 		ConnectDetach(coid);
 		switch (rcvMsg.userCommandType) {
 		case OPCON_USER_COMMAND_NO_COMMAND_AVAILABLE:
-			cout << "ComputerSystem: " << "ACK from opConsole received" << endl;
 			break;
 		}
 		return;

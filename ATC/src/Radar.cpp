@@ -10,7 +10,6 @@ Radar::Radar(std::vector<Plane> &planes) :
 }
 
 bool Radar::pingPlane(int planeNumber, PlanePositionResponse *out) {
-	cout << planes.size() << endl;
 	for (size_t i = 0; i < planes.size(); i++) {
 		if (planes[i].getPlaneId() == planeNumber) {
 			*out = pingPlane(planes[i]);
