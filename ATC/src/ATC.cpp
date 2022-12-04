@@ -6,6 +6,8 @@
 #include <pthread.h>
 #include <chrono>
 #include <thread>
+#include <fstream>
+#include <sstream>
 
 #include "ComputerSystem.h"
 #include "Radar.h"
@@ -119,15 +121,74 @@ void OperatorConsoleDemo() {
 	pthread_join(tid, NULL);
 }
 
+void writeFiles() {
+	int fdlow = creat("/data/home/qnxuser/lowload.txt",
+	S_IRUSR | S_IWUSR | S_IXUSR);
+	if (fdlow != -1) {
+		write(fdlow, LOW_LOAD, strlen(LOW_LOAD));
+		close(fdlow);
+	}
+
+	int fdmed = creat("/data/home/qnxuser/medload.txt",
+	S_IRUSR | S_IWUSR | S_IXUSR);
+	if (fdmed != -1) {
+		write(fdmed, MED_LOAD, strlen(MED_LOAD));
+		close(fdmed);
+	}
+
+	int fdhigh = creat("/data/home/qnxuser/highload.txt",
+	S_IRUSR | S_IWUSR | S_IXUSR);
+	if (fdhigh != -1) {
+		write(fdhigh, HIGH_LOAD, strlen(HIGH_LOAD));
+		close(fdhigh);
+	}
+}
+
+std::vector<PlaneStartParams> readFile(std::string filePath) {
+	std::vector<PlaneStartParams> planes;
+	std::ifstream input(filePath);
+	if (input) {
+		std::string line;
+		while (std::getline(input, line)) {
+			std::stringstream ss(line);
+			int time, id, px, py, pz, vx, vy, vz;
+			ss >> time >> id >> px >> py >> pz >> vx >> vy >> vz;
+			PlaneStartParams p;
+			p.id = id;
+			p.arrivalTime = time;
+			p.initialPosition = {px, py, pz};
+			p.initialVelocity = {vx, vy, vz};
+			planes.push_back(p);
+		}
+	} else {
+		std::cout << "Could not open input file" << std::endl;
+	}
+	return planes;
+}
+
 void computerSystemDemo() {
+
+	std::string choice = "";
+	while (choice != "low" && choice != "medium" && choice != "high") {
+		std::cout << "Enter the congestion level: [low,medium,high]: ";
+		std::cin >> choice;
+	}
+	std::string filePath;
+	if (choice == "low") {
+		filePath = "/data/home/qnxuser/lowload.txt";
+	} else if (choice == "medium") {
+		filePath = "/data/home/qnxuser/medload.txt";
+	} else if (choice == "high") {
+		filePath = "/data/home/qnxuser/highload.txt";
+	}
+
+	std::vector<PlaneStartParams> params = readFile(filePath);
+	std::vector<Plane> planes;
+	for (size_t i = 0; i < params.size(); i++) {
+		planes.push_back(Plane(params[i]));
+	}
+
 	pthread_t compSystemTid, opConsoleTid, displayTid;
-	PlaneStartParams params1 = { 1, 1, { 0, 50000, 20000 }, { 1000, 0, 0 } };
-	PlaneStartParams params2 = { 2, 1, { 50000, 0, 20000 }, { 0, 1000, 0 } };
-	PlaneStartParams params3 = { 3, 3, { 3, 3, 3 }, { 3, 3, 3 } };
-	Plane plane1 = Plane(params1);
-	Plane plane2 = Plane(params2);
-	Plane plane3 = Plane(params3);
-	vector<Plane> planes { plane1, plane2, plane3 };
 
 	int numOfPlanes = planes.size();
 	pthread_t planeThreads[numOfPlanes];
@@ -203,41 +264,17 @@ void computerSystemDemo() {
 
 }
 
-void writeFiles() {
-	int fdlow = creat("/data/home/qnxuser/lowload.txt",
-	S_IRUSR | S_IWUSR | S_IXUSR);
-	if (fdlow != -1) {
-		write(fdlow, LOW_LOAD, strlen(LOW_LOAD));
-		close(fdlow);
-	}
-
-	int fdmed = creat("/data/home/qnxuser/medload.txt",
-	S_IRUSR | S_IWUSR | S_IXUSR);
-	if (fdmed != -1) {
-		write(fdmed, MED_LOAD, strlen(MED_LOAD));
-		close(fdmed);
-	}
-
-	int fdhigh = creat("/data/home/qnxuser/highload.txt",
-	S_IRUSR | S_IWUSR | S_IXUSR);
-	if (fdhigh != -1) {
-		write(fdhigh, HIGH_LOAD, strlen(HIGH_LOAD));
-		close(fdhigh);
-	}
-}
-
 int main() {
 	std::string choice = "";
 	while (choice != "write" && choice != "run") {
 		std::cout
-				<< "Enter 'write' to create the input files in the QNX VM. Enter 'run' to run the ATC simulation.";
+				<< "Enter 'write' to create the input files in the QNX VM. Enter 'run' to run the ATC simulation." << std::endl;
 		cin >> choice;
 	}
 	if (choice == "write") {
-
+		writeFiles();
+	} else if (choice == "run") {
+		computerSystemDemo();
 	}
-	//planeDemo();
-	computerSystemDemo();
-//	OperatorConsoleDemo();
 	return 0;
 }
