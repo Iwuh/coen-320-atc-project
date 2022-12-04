@@ -176,6 +176,31 @@ void* OperatorConsole::cinRead(void *param) {
 						<< std::endl;
 				continue;
 			}
+		} else if (tokens[0] == OPCON_COMMAND_STRING_UPDATE_CONGESTION_VALUE) {
+			if (tokens.size() < 2) {
+				std::cout << "OpConsole: "
+						<< "Error: must provide a valid integer" << std::endl;
+				continue;
+			}
+			try {
+				int congestionDegree = std::stoi(tokens[1]);
+				if (congestionDegree < 1) {
+					std::cout << "OpConsole: "
+							<< "Congestion value must be larger than 1" << endl;
+					continue;
+				}
+				OperatorConsoleResponseMessage res;
+				res.userCommandType =
+				OPCON_USER_COMMAND_UPDATE_CONGESTION_VALUE;
+				res.newCongestionValue = congestionDegree;
+				pthread_mutex_lock(&mutex);
+				responseQueue.push(res);
+				pthread_mutex_unlock(&mutex);
+			} catch (std::invalid_argument &e) {
+				std::cout << "OpConsole: " << "Error: not a valid integer"
+						<< std::endl;
+				continue;
+			}
 		} else {
 			std::cout << "OpConsole: " << "Unknown command" << std::endl;
 			continue;
