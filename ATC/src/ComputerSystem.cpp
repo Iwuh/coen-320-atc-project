@@ -59,8 +59,7 @@ void ComputerSystem::createPeriodicTasks() {
 
 	// Create a new communication channel belonging to the plane and store the handle in chid.
 	if ((chid = ChannelCreate(0)) == -1) {
-		std::cout << "ComputerSystem: channel creation failed. Exiting thread."
-				<< std::endl;
+		std::cout << "channel creation failed. Exiting thread." << std::endl;
 		return;
 	}
 
@@ -129,11 +128,11 @@ void ComputerSystem::listen() {
 				break;
 			case COMMAND_EXIT_THREAD:
 				// Required to allow all threads to gracefully terminate when the program is terminating
-				cout << "Received EXIT command";
+				cout << "ComputerSystem: " << "Received EXIT command";
 				MsgReply(rcvid, EOK, NULL, 0);
 				return;
 			default:
-				std::cout << "ComputerSystem: received unknown command "
+				std::cout << "ComputerSystem: " << "received unknown command "
 						<< msg.command << std::endl;
 				MsgError(rcvid, ENOSYS);
 				break;
@@ -145,7 +144,6 @@ void ComputerSystem::listen() {
 void ComputerSystem::logSystem() {
 	ofstream logfile;
 	printCurrentTime();
-	cout << endl;
 	for (auto const &x : airspace) {
 		logfile.open("logfile.txt");
 		logfile << x.first << ":" << std::to_string(x.second.currentPosition.x)
@@ -171,7 +169,8 @@ void ComputerSystem::opConCheck() {
 	sendMsg.systemCommandType = OPCON_CONSOLE_COMMAND_GET_USER_COMMAND;
 	if (MsgSend(coid, &sendMsg, sizeof(sendMsg), &rcvMsg, sizeof(rcvMsg))
 			== -1) {
-		cout << "Couldn't get user request queue from operator console";
+		cout << "ComputerSystem: "
+				<< "Couldn't get user request queue from operator console";
 		exit(-1);
 	}
 	switch (rcvMsg.userCommandType) {
@@ -194,8 +193,12 @@ void ComputerSystem::sendDisplayCommand(int planeNumber) {
 		int coid = ConnectAttach(0, 0, displayChid, _NTO_SIDE_CHANNEL, 0);
 		dataDisplayCommandMessage sendMsg;
 		sendMsg.commandType = COMMAND_ONE_PLANE;
+		sendMsg.commandBody.one.aircraftID = planeNumber;
+		sendMsg.commandBody.one.position = out.currentPosition;
+		sendMsg.commandBody.one.velocity = out.currentVelocity;
 		if (MsgSend(coid, &sendMsg, sizeof(sendMsg), NULL, 0) == -1) {
-			cout << "Couldn't send command to the display.";
+			cout << "ComputerSystem: "
+					<< "Couldn't send command to the display.";
 			exit(-1);
 		}
 	} else {
@@ -209,15 +212,15 @@ void ComputerSystem::sendVelocityUpdateToComm(int planeNumber,
 		Vec3 newVelocity) {
 	// Request radar for the plane for sanity purposes
 	// Open connection to comm and send update message
-	cout << "Sending message to comm" << endl;
+	cout << "ComputerSystem: " << "Sending message to comm" << endl;
 }
 
 void ComputerSystem::violationCheck() {
-	cout << "Running violation check..." << endl;
+	cout << "ComputerSystem: " << "Running violation check..." << endl;
 	this->airspace = radar.pingAirspace();
 	//Perform sequential validation, in case of a collision send out an alert to the operator and an update to the display
-	for (size_t i = 0; i < airspace.size(); i++){
-		for (size_t j = i+1; j < airspace.size(); j++){
+	for (size_t i = 0; i < airspace.size(); i++) {
+		for (size_t j = i + 1; j < airspace.size(); j++) {
 			checkForFutureViolation(airspace[i], airspace[j]);
 		}
 	}
@@ -240,11 +243,31 @@ void ComputerSystem::checkForFutureViolation(
 					congestionDegreeSeconds));
 	Vec3 distancesBetweenPlanes = plane1posInCongestionSeconds.absoluteDiff(
 			plane2posInCongestionSeconds);
-	cout << "Distance between plane " << plane1.first << " and " << plane2.first << " is " << distancesBetweenPlanes.print() << endl;
+// Debug print
+//	cout << "ComputerSystem: " << "Distance between plane " << plane1.first
+//			<< " and " << plane2.first << " is "
+//			<< distancesBetweenPlanes.print() << endl;
 	if (distancesBetweenPlanes.x <= HORIZONTAL_LIMIT
 			|| distancesBetweenPlanes.y <= HORIZONTAL_LIMIT
 			|| distancesBetweenPlanes.z <= VERTICAL_LIMIT) {
-		// TODO: raise alert
+		int coid = ConnectAttach(0, 0, operatorChid, _NTO_SIDE_CHANNEL, 0);
+		OperatorConsoleCommandMessage sendMsg;
+		sendMsg.plane1 = plane1.first;
+		sendMsg.plane2 = plane2.first;
+		sendMsg.collisionTimeSeconds = congestionDegreeSeconds;
+		OperatorConsoleResponseMessage rcvMsg;
+		sendMsg.systemCommandType = OPCON_CONSOLE_COMMAND_ALERT;
+		if (MsgSend(coid, &sendMsg, sizeof(sendMsg), &rcvMsg, sizeof(rcvMsg))
+				== -1) {
+			cout << "ComputerSystem: "
+					<< "Couldn't get user request queue from operator console";
+			exit(-1);
+		}
+		switch (rcvMsg.userCommandType) {
+		case OPCON_USER_COMMAND_NO_COMMAND_AVAILABLE:
+			cout << "ComputerSystem: " << "ACK from opConsole received" << endl;
+			break;
+		}
 		return;
 	}
 }

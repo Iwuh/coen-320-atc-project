@@ -38,7 +38,8 @@ private:
 	void opConCheck();
 	void sendDisplayCommand(int planeNumber);
 	void sendVelocityUpdateToComm(int planeNumber, Vec3 newVelocity);
-	void checkForFutureViolation(std::pair<int, PlanePositionResponse> plane1, std::pair<int, PlanePositionResponse> plane2);
+	void checkForFutureViolation(std::pair<int, PlanePositionResponse> plane1,
+			std::pair<int, PlanePositionResponse> plane2);
 	int chid;
 	int operatorChid;
 	int displayChid;

@@ -1,5 +1,4 @@
 
-
 #ifndef SRC_RADAR_H_
 #define SRC_RADAR_H_
 
@@ -18,7 +17,8 @@ public:
 
 private:
 	PlanePositionResponse pingPlane(Plane &p);
-	std::vector<PlanePositionResponse> pingMultiplePlanes(std::vector<Plane> &planes);
+	std::vector<PlanePositionResponse> pingMultiplePlanes(
+			std::vector<Plane> &planes);
 
 	std::vector<Plane> planes;
 };

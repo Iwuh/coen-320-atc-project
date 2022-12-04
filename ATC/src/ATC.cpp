@@ -88,15 +88,14 @@ void planeDemo() {
 	pthread_join(tid, NULL);
 }
 
-void OperatorConsoleDemo()
-{
+void OperatorConsoleDemo() {
 	OperatorConsole oc;
 	pthread_t tid;
 	pthread_create(&tid, NULL, &OperatorConsole::start, &oc);
 
 	while (oc.getChid() == -1)
 		;
-	int coid = ConnectAttach(0,0,oc.getChid(),_NTO_SIDE_CHANNEL,0);
+	int coid = ConnectAttach(0, 0, oc.getChid(), _NTO_SIDE_CHANNEL, 0);
 
 	int64_t sleepUntil;
 	for (int i = 0; i < 3; i++) {
@@ -121,18 +120,18 @@ void OperatorConsoleDemo()
 
 void computerSystemDemo() {
 	pthread_t compSystemTid, opConsoleTid, displayTid;
-	PlaneStartParams params1 = {1,1,{0,0,0},{1,1,0}};
-	PlaneStartParams params2 = {2,1,{0,0,0},{1,1,0}};
-	PlaneStartParams params3 = {3,3,{3,3,3},{3,3,3}};
+	PlaneStartParams params1 = { 1, 1, { 0, 0, 0 }, { 1, 1, 0 } };
+	PlaneStartParams params2 = { 2, 1, { 0, 0, 0 }, { 1000, 1000, 0 } };
+	PlaneStartParams params3 = { 3, 3, { 3, 3, 3 }, { 3, 3, 3 } };
 	Plane plane1 = Plane(params1);
 	Plane plane2 = Plane(params2);
 	Plane plane3 = Plane(params3);
-	vector<Plane> planes{plane1,plane2,plane3};
+	vector<Plane> planes { plane1, plane2, plane3 };
 
 	int numOfPlanes = planes.size();
 	pthread_t planeThreads[numOfPlanes];
 
-	for(size_t i=0; i<planes.size(); i++ ){
+	for (size_t i = 0; i < planes.size(); i++) {
 		pthread_create(&planeThreads[i], NULL, &Plane::start, &planes[i]);
 	}
 
@@ -145,7 +144,7 @@ void computerSystemDemo() {
 
 	compSystem.setRadar(radar);
 	compSystem.setCommSystem(commSystem);
-	compSystem.setCongestionDegreeSeconds(5);
+	compSystem.setCongestionDegreeSeconds(5000);
 
 	pthread_create(&opConsoleTid, NULL, &OperatorConsole::start, &opConsole);
 	pthread_create(&displayTid, NULL, &DataDisplay::start, &display);
@@ -166,7 +165,6 @@ void computerSystemDemo() {
 		return;
 	}
 	std::this_thread::sleep_for(std::chrono::milliseconds(15 * 1000));
-	cout << "SENDING EXIT" << endl;
 
 	ComputerSystemMessage msg;
 	msg.command = COMMAND_EXIT_THREAD;
@@ -176,7 +174,7 @@ void computerSystemDemo() {
 		cout << "Unable to shut down compSystem." << endl;
 	}
 
-	for(size_t i=0; i<planes.size(); i++ ){
+	for (size_t i = 0; i < planes.size(); i++) {
 		pthread_join(planeThreads[i], NULL);
 	}
 	pthread_join(compSystemTid, NULL);

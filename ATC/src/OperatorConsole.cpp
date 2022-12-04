@@ -70,12 +70,21 @@ void OperatorConsole::listen() {
 			pthread_mutex_unlock(&mutex);
 			break;
 		}
+		case OPCON_CONSOLE_COMMAND_ALERT: {
+			cout << "OpConsole: " << "Planes " << msg.plane1 << " and "
+					<< msg.plane2 << " will collide in "
+					<< msg.collisionTimeSeconds << " seconds" << endl;
+			OperatorConsoleResponseMessage msg;
+			msg.userCommandType = OPCON_USER_COMMAND_NO_COMMAND_AVAILABLE;
+			MsgReply(rcvid, EOK, &msg, sizeof(msg));
+			break;
+		}
 		case COMMAND_EXIT_THREAD:
 			// Required to allow all threads to gracefully terminate when the program is terminating
 			MsgReply(rcvid, EOK, NULL, 0);
 			return;
 		default:
-			std::cout << "OperatorConsole received unknown command "
+			std::cout << "OpConsole: " << "received unknown command "
 					<< msg.systemCommandType << std::endl;
 			MsgError(rcvid, ENOSYS);
 			break;
@@ -93,9 +102,11 @@ void* OperatorConsole::cinRead(void *param) {
 	// Get the flag we monitor to know when to stop reading
 	std::atomic_bool *stop = (std::atomic_bool*) param;
 
-	int fd = creat("/data/home/qnxuser/commandlog.txt", S_IRUSR | S_IWUSR | S_IXUSR);
+	int fd = creat("/data/home/qnxuser/commandlog.txt",
+			S_IRUSR | S_IWUSR | S_IXUSR);
 	if (fd == -1) {
-		std::cout << "Failed to open logfile. Errno is " << errno << std::endl;
+		std::cout << "OpConsole: " << "Failed to open logfile. Errno is "
+				<< errno << std::endl;
 	}
 
 	std::string msg;
@@ -110,7 +121,7 @@ void* OperatorConsole::cinRead(void *param) {
 
 		if (fd != -1) {
 			// Create a char buffer with length equal to the message + 1 for the null terminator.
-			char* buffer = new char[msg.length() + 1];
+			char *buffer = new char[msg.length() + 1];
 			// Copy the C++ string into the char buffer.
 			strncpy(buffer, msg.c_str(), msg.length() + 1);
 			// Write the command to the file with a newline.
@@ -122,7 +133,8 @@ void* OperatorConsole::cinRead(void *param) {
 
 		if (tokens[0] == OPCON_COMMAND_STRING_SHOW_PLANE) {
 			if (tokens.size() < 2) {
-				std::cout << "Error: must provide plane number" << std::endl;
+				std::cout << "OpConsole: " << "Error: must provide plane number"
+						<< std::endl;
 				continue;
 			}
 			try {
@@ -134,7 +146,8 @@ void* OperatorConsole::cinRead(void *param) {
 				responseQueue.push(res);
 				pthread_mutex_unlock(&mutex);
 			} catch (std::invalid_argument &e) {
-				std::cout << "Error: not a valid integer" << std::endl;
+				std::cout << "OpConsole: " << "Error: not a valid integer"
+						<< std::endl;
 				continue;
 			}
 		} else if (tokens[0] == OPCON_COMMAND_STRING_SET_VELOCITY) {
@@ -159,11 +172,12 @@ void* OperatorConsole::cinRead(void *param) {
 				responseQueue.push(res);
 				pthread_mutex_unlock(&mutex);
 			} catch (std::invalid_argument &e) {
-				std::cout << "Error: not a valid integer" << std::endl;
+				std::cout << "OpConsole: " << "Error: not a valid integer"
+						<< std::endl;
 				continue;
 			}
 		} else {
-			std::cout << "Unknown command" << std::endl;
+			std::cout << "OpConsole: " << "Unknown command" << std::endl;
 			continue;
 		}
 	}
