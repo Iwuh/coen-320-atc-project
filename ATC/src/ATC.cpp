@@ -148,7 +148,7 @@ void computerSystemDemo() {
 
 	pthread_create(&opConsoleTid, NULL, &OperatorConsole::start, &opConsole);
 	pthread_create(&displayTid, NULL, &DataDisplay::start, &display);
-	while (opConsole.getChid() == -1 && displayTid == -1)
+	while (opConsole.getChid() == -1 || display.getChid() == -1)
 		;
 
 	compSystem.setDisplayChid(display.getChid());

@@ -142,7 +142,34 @@ void ComputerSystem::listen() {
 }
 
 void ComputerSystem::logSystem() {
-	ofstream logfile;
+	this->airspace = radar.pingAirspace();
+	size_t aircraftCount = airspace.size();
+	int *idArray = new int[aircraftCount];
+	Vec3 *positionArray = new Vec3[aircraftCount];
+	Vec3 *velocityArray = new Vec3[aircraftCount];
+	for (size_t i = 0; i < aircraftCount; i++) {
+		auto& current = airspace[i];
+		idArray[i] = current.first;
+		positionArray[i] = current.second.currentPosition;
+		velocityArray[i] = current.second.currentVelocity;
+	}
+
+	dataDisplayCommandMessage msg;
+	msg.commandType = COMMAND_GRID;
+	msg.commandBody.multiple.numberOfAircrafts = aircraftCount;
+	msg.commandBody.multiple.planeIDArray = idArray;
+	msg.commandBody.multiple.positionArray = positionArray;
+	msg.commandBody.multiple.velocityArray = velocityArray;
+
+	int coid = ConnectAttach(0, 0, displayChid, _NTO_SIDE_CHANNEL, 0);
+	if (MsgSend(coid, &msg, sizeof(msg), NULL, 0) == -1) {
+		cout << "ComputerSystem: "
+				<< "Couldn't send command to the display.";
+		exit(-1);
+	}
+	ConnectDetach(coid);
+
+	/*ofstream logfile;
 	printCurrentTime();
 	for (auto const &x : airspace) {
 		logfile.open("logfile.txt");
@@ -159,7 +186,7 @@ void ComputerSystem::logSystem() {
 	}
 	cout << endl;
 	logfile << endl;
-	logfile.close();
+	logfile.close();*/
 }
 
 void ComputerSystem::opConCheck() {

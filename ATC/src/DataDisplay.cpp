@@ -113,9 +113,9 @@ void DataDisplay::receiveMessage() {
 
 std::string DataDisplay::generateGrid(multipleAircraftDisplay &airspaceInfo)
 {
-	int rowSize = 100;
-	int columnSize = 100;
-	int cellSize = 1000;
+	int rowSize = 50;
+	int columnSize = 50;
+	int cellSize = 2000;
 
 	std::string grid[rowSize][columnSize]; //grid 100000ft x 100000ft with each square being 1000ft
 	//storing into grid
@@ -136,7 +136,7 @@ std::string DataDisplay::generateGrid(multipleAircraftDisplay &airspaceInfo)
 							grid[j][k] += ",";
 						}
 						grid[j][k] +=
-								airspaceInfo.planeIDArray[i];
+								std::to_string(airspaceInfo.planeIDArray[i]);
 					}
 				}
 			}
