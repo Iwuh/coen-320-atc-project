@@ -235,7 +235,23 @@ void ComputerSystem::sendVelocityUpdateToComm(int planeNumber,
 		Vec3 newVelocity) {
 	// Request radar for the plane for sanity purposes
 	// Open connection to comm and send update message
+	PlanePositionResponse out;
 	cout << "ComputerSystem: " << "Sending message to comm" << endl;
+	if (radar.pingPlane(planeNumber, &out)){
+		if (commSystem.send(planeNumber, newVelocity)){
+			cout << "ComputerSystem: " << "Plane " << planeNumber << " velocity updated." << endl;
+		}
+		else{
+			cout << "ComputerSystem: couldn't update velocity for plane " << planeNumber << endl;
+		}
+	}else{
+		cout
+				<< "The plane requested to update the velocity is not found in the airspace"
+				<< endl;
+	}
+
+
+
 }
 
 void ComputerSystem::violationCheck() {
