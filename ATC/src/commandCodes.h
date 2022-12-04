@@ -41,6 +41,8 @@
 #define COMMAND_WARNING 1113
 // Incoming command to display the grid view of the airspace.
 #define COMMAND_GRID 1114
+// Incoming command to log the grid view of the airspace.
+#define COMMAND_LOG 1115
 
 /*
  * OperatorConsole command codes

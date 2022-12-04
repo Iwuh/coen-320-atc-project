@@ -7,15 +7,16 @@
 
 #include "DataDisplay.h"
 #include <sys/neutrino.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdlib.h>
+#include <sstream>
 #include "commandCodes.h"
 
-DataDisplay::DataDisplay() {
-	// TODO Auto-generated constructor stub
-	chid = -1;
-}
-
-DataDisplay::~DataDisplay() {
-	// TODO Auto-generated destructor stub
+DataDisplay::DataDisplay()
+	: chid(-1), fd(-1){
 }
 
 int DataDisplay::getChid() const {
@@ -27,7 +28,21 @@ void DataDisplay::run() {
 		std::cout << "channel creation failed. Exiting thread." << std::endl;
 		return;
 	}
+
+	// Open log file
+	fd = creat("/data/home/qnxuser/airspacelog.txt",
+				S_IRUSR | S_IWUSR | S_IXUSR);
+	if (fd == -1) {
+		std::cout << "DataDisplay: " << "Failed to open logfile. Errno is "
+				<< errno << std::endl;
+	}
+
 	receiveMessage(); //start to listen for messages
+
+	// Close log file
+	if (fd != -1) {
+			close(fd);
+	}
 }
 
 void DataDisplay::receiveMessage() {
@@ -71,46 +86,21 @@ void DataDisplay::receiveMessage() {
 		case COMMAND_GRID: //ignoring z-axis, doing x and y (top-view)
 		{
 			MsgReply(rcvid, EOK, NULL, 0);
-
-			int rowSize = 100;
-			int columnSize = 100;
-			int cellSize = 1000;
-
-			string grid[rowSize][columnSize]; //grid 100000ft x 100000ft with each square being 1000ft
-			//storing into grid
-			for (size_t i = 0; i < msg.commandBody.multiple.numberOfAircrafts;
-					i++) {
-				for (int j = 0; j < rowSize; j++) {
-					if (msg.commandBody.multiple.positionArray[i].y
-							>= (cellSize * j)
-							&& msg.commandBody.multiple.positionArray[i].y
-									< (cellSize * (j + 1))) { //checking y
-						for (int k = 0; k < columnSize; k++) {
-							//only for x
-							if (msg.commandBody.multiple.positionArray[i].x
-									>= (cellSize * k)
-									&& msg.commandBody.multiple.positionArray[i].x
-											< (cellSize * (k + 1))) { // if plane in row i is between 0 and 20 not included, add to string
-								if (grid[j][k] != "") {
-									grid[j][k] += ",";
-								}
-								grid[j][k] +=
-										msg.commandBody.multiple.planeIDArray[i];
-							}
-						}
-					}
-				}
-			}
-			//printing grid
-			for (int i = 0; i < rowSize; i++) {
-				cout << std::endl;
-				for (int j = 0; j < columnSize; j++) {
-					if (grid[i][j] == "") {
-						std::cout << "| ";
-					} else {
-						std::cout << "|" + grid[i][j];
-					}
-				}
+			std::cout << generateGrid(msg.commandBody.multiple) << std::endl;
+			break;
+		}
+		case COMMAND_LOG:
+		{
+			MsgReply(rcvid, EOK, NULL, 0);
+			std::string grid = generateGrid(msg.commandBody.multiple);
+			if (fd != -1) {
+				char* buffer = new char[grid.length() + 1];
+				strncpy(buffer, grid.c_str(), grid.length() + 1);
+				write(fd, buffer, grid.length() + 1);
+				write(fd, "\n", 1);
+				delete[] buffer;
+			} else {
+				std::cout << "DataDisplay: Received a log command but the log file is not opened." << std::endl;
 			}
 			break;
 		}
@@ -119,6 +109,52 @@ void DataDisplay::receiveMessage() {
 			return;
 		}
 	}
+}
+
+std::string DataDisplay::generateGrid(multipleAircraftDisplay &airspaceInfo)
+{
+	int rowSize = 100;
+	int columnSize = 100;
+	int cellSize = 1000;
+
+	std::string grid[rowSize][columnSize]; //grid 100000ft x 100000ft with each square being 1000ft
+	//storing into grid
+	for (size_t i = 0; i < airspaceInfo.numberOfAircrafts;
+			i++) {
+		for (int j = 0; j < rowSize; j++) {
+			if (airspaceInfo.positionArray[i].y
+					>= (cellSize * j)
+					&& airspaceInfo.positionArray[i].y
+							< (cellSize * (j + 1))) { //checking y
+				for (int k = 0; k < columnSize; k++) {
+					//only for x
+					if (airspaceInfo.positionArray[i].x
+							>= (cellSize * k)
+							&& airspaceInfo.positionArray[i].x
+									< (cellSize * (k + 1))) { // if plane in row i is between 0 and 20 not included, add to string
+						if (grid[j][k] != "") {
+							grid[j][k] += ",";
+						}
+						grid[j][k] +=
+								airspaceInfo.planeIDArray[i];
+					}
+				}
+			}
+		}
+	}
+	//printing grid
+	std::stringstream output;
+	for (int i = 0; i < rowSize; i++) {
+		output << std::endl;
+		for (int j = 0; j < columnSize; j++) {
+			if (grid[i][j] == "") {
+				output << "| ";
+			} else {
+				output << "|" + grid[i][j];
+			}
+		}
+	}
+	return output.str();
 }
 
 void* DataDisplay::start(void *context) {
