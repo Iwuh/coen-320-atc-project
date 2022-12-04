@@ -8,11 +8,10 @@
 #include "CommunicationSystem.h"
 #include "commandCodes.h"
 
-
-CommunicationSystem::CommunicationSystem(){
+CommunicationSystem::CommunicationSystem() {
 }
-CommunicationSystem::CommunicationSystem(std::vector<Plane> &planes)
-	: planes(planes) {
+CommunicationSystem::CommunicationSystem(std::vector<Plane> &planes) :
+		planes(planes) {
 
 }
 

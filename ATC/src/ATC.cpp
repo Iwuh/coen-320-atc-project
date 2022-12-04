@@ -193,7 +193,8 @@ void computerSystemDemo() {
 	for (size_t i = 0; i < planes.size(); i++) {
 		PlaneCommandMessage exitMsg;
 		exitMsg.command = COMMAND_EXIT_THREAD;
-		int planeCoid = ConnectAttach(0, 0, planes[i].getChid(), _NTO_SIDE_CHANNEL, 0);
+		int planeCoid = ConnectAttach(0, 0, planes[i].getChid(),
+				_NTO_SIDE_CHANNEL, 0);
 		MsgSend(planeCoid, &exitMsg, sizeof(exitMsg), NULL, 0);
 		ConnectDetach(planeCoid);
 		pthread_join(planeThreads[i], NULL);

@@ -55,8 +55,10 @@ void ComputerSystem::createPeriodicTasks() {
 	 */
 
 	periodicTask periodicTasks[COMPUTER_SYSTEM_NUM_PERIODIC_TASKS] = { {
-	AIRSPACE_VIOLATION_CONSTRAINT_TIMER, 1 }, { LOG_AIRSPACE_TO_CONSOLE_TIMER, 5 }, {
-	OPERATOR_COMMAND_CHECK_TIMER, 1 }, {LOG_AIRSPACE_TO_FILE_TIMER, 30} };
+	AIRSPACE_VIOLATION_CONSTRAINT_TIMER, 1 },
+			{ LOG_AIRSPACE_TO_CONSOLE_TIMER, 5 }, {
+			OPERATOR_COMMAND_CHECK_TIMER, 1 },
+			{ LOG_AIRSPACE_TO_FILE_TIMER, 30 } };
 
 	// Create a new communication channel belonging to the plane and store the handle in chid.
 	if ((chid = ChannelCreate(0)) == -1) {
@@ -153,7 +155,7 @@ void ComputerSystem::logSystem(bool toFile) {
 	Vec3 *positionArray = new Vec3[aircraftCount];
 	Vec3 *velocityArray = new Vec3[aircraftCount];
 	for (size_t i = 0; i < aircraftCount; i++) {
-		auto& current = airspace[i];
+		auto &current = airspace[i];
 		idArray[i] = current.first;
 		positionArray[i] = current.second.currentPosition;
 		velocityArray[i] = current.second.currentVelocity;
@@ -172,8 +174,7 @@ void ComputerSystem::logSystem(bool toFile) {
 
 	int coid = ConnectAttach(0, 0, displayChid, _NTO_SIDE_CHANNEL, 0);
 	if (MsgSend(coid, &msg, sizeof(msg), NULL, 0) == -1) {
-		cout << "ComputerSystem: "
-				<< "Couldn't send command to the display.";
+		cout << "ComputerSystem: " << "Couldn't send command to the display.";
 		exit(-1);
 	}
 	ConnectDetach(coid);
