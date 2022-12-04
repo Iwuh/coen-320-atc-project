@@ -1,19 +1,15 @@
-#include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/dispatch.h>
 #include <pthread.h>
 #include <chrono>
+#include <string>
 #include <thread>
 #include <fstream>
 #include <sstream>
+#include <iostream>
+#include <time.h>
 
 #include "ComputerSystem.h"
 #include "Radar.h"
-
-#include <iostream>
-#include <time.h>
 #include "Plane.h"
 #include "OperatorConsole.h"
 #include "DataDisplay.h"
