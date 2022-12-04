@@ -85,13 +85,14 @@ void DataDisplay::receiveMessage() {
 		}
 		case COMMAND_GRID: //ignoring z-axis, doing x and y (top-view)
 		{
+			// The sender deletes the arrays allocated for grid printing once we reply, so we need them to stay valid until then.
+			std::cout << generateGrid(msg.commandBody.multiple);
 			MsgReply(rcvid, EOK, NULL, 0);
-			std::cout << generateGrid(msg.commandBody.multiple) << std::endl;
 			break;
 		}
 		case COMMAND_LOG: {
-			MsgReply(rcvid, EOK, NULL, 0);
 			std::string grid = generateGrid(msg.commandBody.multiple);
+			MsgReply(rcvid, EOK, NULL, 0);
 			if (fd != -1) {
 				char *buffer = new char[grid.length() + 1];
 				strncpy(buffer, grid.c_str(), grid.length() + 1);
