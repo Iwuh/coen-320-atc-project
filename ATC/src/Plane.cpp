@@ -27,6 +27,10 @@ int Plane::getChid() const {
 	return chid;
 }
 
+int Plane::getPlaneId() const {
+	return startParams.id;
+}
+
 void Plane::run() {
 	// Create a new communication channel belonging to the plane and store the handle in chid.
 	if ((chid = ChannelCreate(0)) == -1) {

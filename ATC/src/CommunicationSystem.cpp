@@ -8,16 +8,21 @@
 #include "CommunicationSystem.h"
 #include "commandCodes.h"
 
-CommunicationSystem::CommunicationSystem() {
-	// TODO Auto-generated constructor stub
+CommunicationSystem::CommunicationSystem(std::vector<Plane> &planes)
+	: planes(planes) {
 
 }
 
-CommunicationSystem::~CommunicationSystem() {
-	// TODO Auto-generated destructor stub
+bool CommunicationSystem::send(int planeNumber, Vec3 &newVelocity) {
+	for (size_t i = 0; i < planes.size(); i++) {
+		if (planes[i].getPlaneId() == planeNumber) {
+			return send(planes[i], newVelocity);
+		}
+	}
+	return false;
 }
 
-bool CommunicationSystem::send(Plane R, Vec3 newVelocity) {
+bool CommunicationSystem::send(Plane &R, Vec3 &newVelocity) {
 	int planeChid = R.getChid(); //for sending to correct plane
 
 	int sndid; //send id
