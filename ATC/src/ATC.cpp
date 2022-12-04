@@ -121,8 +121,8 @@ void OperatorConsoleDemo()
 
 void computerSystemDemo() {
 	pthread_t compSystemTid, opConsoleTid, displayTid;
-	PlaneStartParams params1 = {1,1,{1,1,1},{1,1,1}};
-	PlaneStartParams params2 = {2,2,{2,2,2},{2,2,2}};
+	PlaneStartParams params1 = {1,1,{0,0,0},{1,1,0}};
+	PlaneStartParams params2 = {2,1,{0,0,0},{1,1,0}};
 	PlaneStartParams params3 = {3,3,{3,3,3},{3,3,3}};
 	Plane plane1 = Plane(params1);
 	Plane plane2 = Plane(params2);
@@ -145,6 +145,7 @@ void computerSystemDemo() {
 
 	compSystem.setRadar(radar);
 	compSystem.setCommSystem(commSystem);
+	compSystem.setCongestionDegreeSeconds(5);
 
 	pthread_create(&opConsoleTid, NULL, &OperatorConsole::start, &opConsole);
 	pthread_create(&displayTid, NULL, &DataDisplay::start, &display);
@@ -175,7 +176,7 @@ void computerSystemDemo() {
 		cout << "Unable to shut down compSystem." << endl;
 	}
 
-	for(int i=0; i<planes.size(); i++ ){
+	for(size_t i=0; i<planes.size(); i++ ){
 		pthread_join(planeThreads[i], NULL);
 	}
 	pthread_join(compSystemTid, NULL);

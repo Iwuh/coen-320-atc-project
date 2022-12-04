@@ -54,7 +54,7 @@ void ComputerSystem::createPeriodicTasks() {
 	 */
 
 	periodicTask periodicTasks[COMPUTER_SYSTEM_NUM_PERIODIC_TASKS] = { {
-	AIRSPACE_VIOLATION_CONSTRAINT_TIMER, 2 }, { LOG_AIRSPACE_TIMER, 5 }, {
+	AIRSPACE_VIOLATION_CONSTRAINT_TIMER, 1 }, { LOG_AIRSPACE_TIMER, 5 }, {
 	OPERATOR_COMMAND_CHECK_TIMER, 1 } };
 
 	// Create a new communication channel belonging to the plane and store the handle in chid.
@@ -216,14 +216,10 @@ void ComputerSystem::violationCheck() {
 	cout << "Running violation check..." << endl;
 	this->airspace = radar.pingAirspace();
 	//Perform sequential validation, in case of a collision send out an alert to the operator and an update to the display
-	for (auto it = airspace.begin(); it != airspace.end(); it++) {
-		auto nextIt = std::next(it);
-		auto prevIt = std::prev(it);
-		std::pair<int, PlanePositionResponse> next = std::make_pair(
-				nextIt->first, nextIt->second);
-		std::pair<int, PlanePositionResponse> prev = std::make_pair(
-				prevIt->first, prevIt->second);
-		checkForFutureViolation(prev, next);
+	for (size_t i = 0; i < airspace.size(); i++){
+		for (size_t j = i+1; j < airspace.size(); j++){
+			checkForFutureViolation(airspace[i], airspace[j]);
+		}
 	}
 }
 
@@ -244,6 +240,7 @@ void ComputerSystem::checkForFutureViolation(
 					congestionDegreeSeconds));
 	Vec3 distancesBetweenPlanes = plane1posInCongestionSeconds.absoluteDiff(
 			plane2posInCongestionSeconds);
+	cout << "Distance between plane " << plane1.first << " and " << plane2.first << " is " << distancesBetweenPlanes.print() << endl;
 	if (distancesBetweenPlanes.x <= HORIZONTAL_LIMIT
 			|| distancesBetweenPlanes.y <= HORIZONTAL_LIMIT
 			|| distancesBetweenPlanes.z <= VERTICAL_LIMIT) {

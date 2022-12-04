@@ -14,7 +14,7 @@ public:
 	Radar(std::vector<Plane> &planes);
 
 	bool pingPlane(int planeNumber, PlanePositionResponse *out);
-	std::map<int, PlanePositionResponse> pingAirspace();
+	std::vector<pair<int, PlanePositionResponse>> pingAirspace();
 
 private:
 	PlanePositionResponse pingPlane(Plane &p);

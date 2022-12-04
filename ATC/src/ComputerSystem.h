@@ -46,7 +46,7 @@ private:
 	CommunicationSystem commSystem;
 	Vec3 airspaceBounds;
 	int congestionDegreeSeconds;
-	std::map<int, PlanePositionResponse> airspace;
+	std::vector<pair<int, PlanePositionResponse>> airspace;
 public:
 	static void* start(void *context);
 };

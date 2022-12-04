@@ -19,16 +19,16 @@ bool Radar::pingPlane(int planeNumber, PlanePositionResponse *out) {
 	}
 	return false;
 }
-std::map<int, PlanePositionResponse> Radar::pingAirspace() {
+std::vector<pair<int, PlanePositionResponse>> Radar::pingAirspace() {
 	constexpr Vec3 NOT_IN_AIRSPACE{-1,-1,-1};
-	std::map<int, PlanePositionResponse> map;
+	std::vector<pair<int, PlanePositionResponse>> vec;
 	for (size_t i = 0; i < planes.size(); i++) {
 		PlanePositionResponse res = pingPlane(planes[i]);
 		if (res.currentPosition != NOT_IN_AIRSPACE) {
-			map[planes[i].getPlaneId()] = std::move(res);
+			vec.push_back(std::make_pair(planes[i].getPlaneId(),res));
 		}
 	}
-	return map;
+	return vec;
 }
 
 PlanePositionResponse Radar::pingPlane(Plane &p)
