@@ -84,6 +84,7 @@ private:
 	Vec3 currentPosition;
 	Vec3 currentVelocity;
 	bool arrived;
+	bool left;
 	int chid;
 
 public:
