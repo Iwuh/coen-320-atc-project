@@ -37,6 +37,9 @@ typedef struct Vec3 {
 	Vec3 scalarMultiplication(int scalarMultiplier) {
 		return {x*scalarMultiplier, y*scalarMultiplier, z*scalarMultiplier};
 	}
+	bool operator==(const Vec3& rhs) {
+		return x == rhs.x && y = rhs.y && z == rhs.z;
+	}
 	int x;
 	int y;
 	int z;
@@ -67,6 +70,7 @@ class Plane {
 public:
 	Plane(PlaneStartParams &params);
 	int getChid() const;
+	int getPlaneId() const;
 
 private:
 	void run();

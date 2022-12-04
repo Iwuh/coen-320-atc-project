@@ -8,20 +8,18 @@
 #ifndef SRC_COMMUNICATIONSYSTEM_H_
 #define SRC_COMMUNICATIONSYSTEM_H_
 
-//TODO: Define types for command messages
-
 #include "Plane.h"
-
-#include <sys/neutrino.h>
+#include <vector>
 
 class CommunicationSystem {
 public:
-	CommunicationSystem();
-	virtual ~CommunicationSystem();
+	CommunicationSystem(std::vector<Plane> &planes);
+
+	bool send(Plane &R, Vec3 &newVelocity); //returns true if sending message is successful and false if not
+	bool send(int &planeNumber, Vec3 &newVelocity);
 
 private:
-
-	bool send(Plane R, Vec3 newVelocity); //returns true if sending message is successful and false if not
+	std::vector<Plane> planes;
 };
 
 #endif /* SRC_COMMUNICATIONSYSTEM_H_ */
