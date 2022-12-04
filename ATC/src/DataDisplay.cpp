@@ -114,9 +114,9 @@ void DataDisplay::receiveMessage() {
 }
 
 std::string DataDisplay::generateGrid(multipleAircraftDisplay &airspaceInfo) {
-	constexpr int rowSize = 50;
-	constexpr int columnSize = 50;
-	constexpr int cellSize = 2000;
+	constexpr int rowSize = 25;
+	constexpr int columnSize = 25;
+	constexpr int cellSize = 4000;
 
 	std::string grid[rowSize][columnSize]; //grid 100000ft x 100000ft with each square being 1000ft
 	//storing into grid

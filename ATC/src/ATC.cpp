@@ -19,107 +19,7 @@
 #include "DataDisplay.h"
 #include "CommunicationSystem.h"
 #include "InputStrings.h"
-
-int64_t now() {
-	struct timespec now;
-	clock_gettime(CLOCK_MONOTONIC, &now);
-	return now.tv_sec * 1000 * 1000 * 1000 + now.tv_nsec;
-}
-
-void planeDemo() {
-	// Create an example plane and start the thread.
-	PlaneStartParams params { 1, // id
-			5, // arrival time
-			{ 1, 1, 1 }, // initial position
-			{ 1, 1, 1 } // initial velocity
-	};
-	Plane myPlane(params);
-
-	pthread_t tid;
-	pthread_create(&tid, NULL, &Plane::start, &myPlane);
-
-	// Connect to plane's message passing channel.
-	int coid = ConnectAttach(0, 0, myPlane.getChid(), _NTO_SIDE_CHANNEL, 0);
-
-	// Ping the plane once per second for 15 seconds.
-	int64_t sleepUntil;
-	for (int i = 0; i < 15; i++) {
-		PlaneCommandMessage msg;
-		msg.command = COMMAND_RADAR_PING;
-		PlanePositionResponse res;
-		MsgSend(coid, &msg, sizeof(msg), &res, sizeof(res));
-		std::cout << "Position: <" << res.currentPosition.x << ','
-				<< res.currentPosition.y << ',' << res.currentPosition.z
-				<< ">, ";
-		std::cout << "Velocity: <" << res.currentVelocity.x << ','
-				<< res.currentVelocity.y << ',' << res.currentVelocity.z << ">";
-		std::cout << std::endl;
-
-		sleepUntil = now() + 1000 * 1000 * 1000;
-		while (now() < sleepUntil)
-			;
-	}
-
-	// Change the plane's velocity.
-	PlaneCommandMessage changeMsg;
-	changeMsg.command = COMMAND_SET_VELOCITY;
-	changeMsg.newVelocity = { 2, 3, -1 };
-	MsgSend(coid, &changeMsg, sizeof(changeMsg), NULL, 0);
-
-	// Ping the plane for 15 seconds again.
-	for (int i = 0; i < 15; i++) {
-		PlaneCommandMessage msg;
-		msg.command = COMMAND_RADAR_PING;
-		PlanePositionResponse res;
-		MsgSend(coid, &msg, sizeof(msg), &res, sizeof(res));
-		std::cout << "Position: <" << res.currentPosition.x << ','
-				<< res.currentPosition.y << ',' << res.currentPosition.z
-				<< ">, ";
-		std::cout << "Velocity: <" << res.currentVelocity.x << ','
-				<< res.currentVelocity.y << ',' << res.currentVelocity.z << ">";
-		std::cout << std::endl;
-
-		sleepUntil = now() + 1000 * 1000 * 1000;
-		while (now() < sleepUntil)
-			;
-	}
-
-	// Tell the plane to exit.
-	PlaneCommandMessage msg;
-	msg.command = COMMAND_EXIT_THREAD;
-	MsgSend(coid, &msg, sizeof(msg), NULL, 0);
-	pthread_join(tid, NULL);
-}
-
-void OperatorConsoleDemo() {
-	OperatorConsole oc;
-	pthread_t tid;
-	pthread_create(&tid, NULL, &OperatorConsole::start, &oc);
-
-	while (oc.getChid() == -1)
-		;
-	int coid = ConnectAttach(0, 0, oc.getChid(), _NTO_SIDE_CHANNEL, 0);
-
-	int64_t sleepUntil;
-	for (int i = 0; i < 3; i++) {
-		sleepUntil = now() + 10L * 1000L * 1000L * 1000L;
-		while (now() < sleepUntil)
-			;
-
-		OperatorConsoleCommandMessage sndMsg;
-		OperatorConsoleResponseMessage rcvMsg;
-		sndMsg.systemCommandType = OPCON_CONSOLE_COMMAND_GET_USER_COMMAND;
-		MsgSend(coid, &sndMsg, sizeof(sndMsg), &rcvMsg, sizeof(rcvMsg));
-		std::cout << rcvMsg.userCommandType << std::endl;
-	}
-
-	OperatorConsoleCommandMessage msg;
-	msg.systemCommandType = COMMAND_EXIT_THREAD;
-	MsgSend(coid, &msg, sizeof(msg), NULL, 0);
-	// N.B.: The program will likely hang here until you press enter in the console one more time.
-	// Can't do much about it, it's because std::getline is a blocking operation.
-	pthread_join(tid, NULL);
-}
+#include "constants.h"
 
 void writeFiles() {
 	int fdlow = creat("/data/home/qnxuser/lowload.txt",
@@ -226,7 +126,7 @@ void computerSystemDemo() {
 		std::cout << "ComputerSystem: failed to attach to. Exiting thread.";
 		return;
 	}
-	std::this_thread::sleep_for(std::chrono::milliseconds(60 * 1000));
+	std::this_thread::sleep_for(std::chrono::seconds(TIME_RANGE_SECONDS));
 
 	ComputerSystemMessage msg;
 	msg.command = COMMAND_EXIT_THREAD;
@@ -261,7 +161,6 @@ void computerSystemDemo() {
 		ConnectDetach(planeCoid);
 		pthread_join(planeThreads[i], NULL);
 	}
-
 }
 
 int main() {
