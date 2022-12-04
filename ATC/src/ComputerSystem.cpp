@@ -148,6 +148,7 @@ void ComputerSystem::listen() {
 void ComputerSystem::logSystem(bool toFile) {
 	this->airspace = radar.pingAirspace();
 	size_t aircraftCount = airspace.size();
+
 	int *idArray = new int[aircraftCount];
 	Vec3 *positionArray = new Vec3[aircraftCount];
 	Vec3 *velocityArray = new Vec3[aircraftCount];
@@ -176,25 +177,9 @@ void ComputerSystem::logSystem(bool toFile) {
 		exit(-1);
 	}
 	ConnectDetach(coid);
-
-	/*ofstream logfile;
-	printCurrentTime();
-	for (auto const &x : airspace) {
-		logfile.open("logfile.txt");
-		logfile << x.first << ":" << std::to_string(x.second.currentPosition.x)
-				<< "," << std::to_string(x.second.currentPosition.y) << ","
-				<< std::to_string(x.second.currentPosition.z) << "|";
-		printf(" %d:%s,%s,%s |", x.first,
-				std::to_string(x.second.currentPosition.x),
-				std::to_string(x.second.currentPosition.y),
-				std::to_string(x.second.currentPosition.z));
-		if (x.first % 5 == 0 && x.first != 0) {
-			cout << endl;
-		}
-	}
-	cout << endl;
-	logfile << endl;
-	logfile.close();*/
+	delete[] idArray;
+	delete[] positionArray;
+	delete[] velocityArray;
 }
 
 void ComputerSystem::opConCheck() {
