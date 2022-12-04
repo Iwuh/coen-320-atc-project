@@ -103,7 +103,7 @@ void* OperatorConsole::cinRead(void *param) {
 	std::atomic_bool *stop = (std::atomic_bool*) param;
 
 	int fd = creat("/data/home/qnxuser/commandlog.txt",
-			S_IRUSR | S_IWUSR | S_IXUSR);
+	S_IRUSR | S_IWUSR | S_IXUSR);
 	if (fd == -1) {
 		std::cout << "OpConsole: " << "Failed to open logfile. Errno is "
 				<< errno << std::endl;

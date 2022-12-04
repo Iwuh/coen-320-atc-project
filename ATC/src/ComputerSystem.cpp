@@ -49,13 +49,16 @@ void ComputerSystem::createPeriodicTasks() {
 	 * Save the airspace state and operator requests to the logfile - every 30 seconds
 	 * Codes corresponding to the index of the timer in the array are:
 	 * AIRSPACE_VIOLATION_CONSTRAINT_TIMER 0
-	 * LOG_AIRSPACE_TIMER 1
+	 * LOG_AIRSPACE_TO_CONSOLE_TIMER 1
 	 * OPCON_USER_ACTION_TIMER 2
+	 * LOG_AIRSPACE_TO_FILE_TIMER 3
 	 */
 
 	periodicTask periodicTasks[COMPUTER_SYSTEM_NUM_PERIODIC_TASKS] = { {
-	AIRSPACE_VIOLATION_CONSTRAINT_TIMER, 1 }, { LOG_AIRSPACE_TIMER, 5 }, {
-	OPERATOR_COMMAND_CHECK_TIMER, 1 } };
+	AIRSPACE_VIOLATION_CONSTRAINT_TIMER, 1 },
+			{ LOG_AIRSPACE_TO_CONSOLE_TIMER, 5 }, {
+			OPERATOR_COMMAND_CHECK_TIMER, 1 },
+			{ LOG_AIRSPACE_TO_FILE_TIMER, 30 } };
 
 	// Create a new communication channel belonging to the plane and store the handle in chid.
 	if ((chid = ChannelCreate(0)) == -1) {
@@ -104,14 +107,17 @@ void ComputerSystem::listen() {
 		if (rcvid == 0) {
 			// Handle internal switches from the pulses of the various timers.
 			switch (msg.header.code) {
-			case LOG_AIRSPACE_TIMER:
-				logSystem();
+			case LOG_AIRSPACE_TO_CONSOLE_TIMER:
+				logSystem(false);
 				break;
 			case AIRSPACE_VIOLATION_CONSTRAINT_TIMER:
 				violationCheck();
 				break;
 			case OPERATOR_COMMAND_CHECK_TIMER:
 				opConCheck();
+				break;
+			case LOG_AIRSPACE_TO_FILE_TIMER:
+				logSystem(true);
 				break;
 			default:
 				std::cout
@@ -141,25 +147,40 @@ void ComputerSystem::listen() {
 	}
 }
 
-void ComputerSystem::logSystem() {
-	ofstream logfile;
-	printCurrentTime();
-	for (auto const &x : airspace) {
-		logfile.open("logfile.txt");
-		logfile << x.first << ":" << std::to_string(x.second.currentPosition.x)
-				<< "," << std::to_string(x.second.currentPosition.y) << ","
-				<< std::to_string(x.second.currentPosition.z) << "|";
-		printf(" %d:%s,%s,%s |", x.first,
-				std::to_string(x.second.currentPosition.x),
-				std::to_string(x.second.currentPosition.y),
-				std::to_string(x.second.currentPosition.z));
-		if (x.first % 5 == 0 && x.first != 0) {
-			cout << endl;
-		}
+void ComputerSystem::logSystem(bool toFile) {
+	this->airspace = radar.pingAirspace();
+	size_t aircraftCount = airspace.size();
+
+	int *idArray = new int[aircraftCount];
+	Vec3 *positionArray = new Vec3[aircraftCount];
+	Vec3 *velocityArray = new Vec3[aircraftCount];
+	for (size_t i = 0; i < aircraftCount; i++) {
+		auto &current = airspace[i];
+		idArray[i] = current.first;
+		positionArray[i] = current.second.currentPosition;
+		velocityArray[i] = current.second.currentVelocity;
 	}
-	cout << endl;
-	logfile << endl;
-	logfile.close();
+
+	dataDisplayCommandMessage msg;
+	if (toFile) {
+		msg.commandType = COMMAND_LOG;
+	} else {
+		msg.commandType = COMMAND_GRID;
+	}
+	msg.commandBody.multiple.numberOfAircrafts = aircraftCount;
+	msg.commandBody.multiple.planeIDArray = idArray;
+	msg.commandBody.multiple.positionArray = positionArray;
+	msg.commandBody.multiple.velocityArray = velocityArray;
+
+	int coid = ConnectAttach(0, 0, displayChid, _NTO_SIDE_CHANNEL, 0);
+	if (MsgSend(coid, &msg, sizeof(msg), NULL, 0) == -1) {
+		cout << "ComputerSystem: " << "Couldn't send command to the display.";
+		exit(-1);
+	}
+	ConnectDetach(coid);
+	delete[] idArray;
+	delete[] positionArray;
+	delete[] velocityArray;
 }
 
 void ComputerSystem::opConCheck() {
@@ -173,6 +194,7 @@ void ComputerSystem::opConCheck() {
 				<< "Couldn't get user request queue from operator console";
 		exit(-1);
 	}
+	ConnectDetach(coid);
 	switch (rcvMsg.userCommandType) {
 	case OPCON_USER_COMMAND_NO_COMMAND_AVAILABLE:
 		break;
@@ -201,6 +223,7 @@ void ComputerSystem::sendDisplayCommand(int planeNumber) {
 					<< "Couldn't send command to the display.";
 			exit(-1);
 		}
+		ConnectDetach(coid);
 	} else {
 		cout
 				<< "The plane requested to update the position is not found in the airspace"
@@ -247,9 +270,9 @@ void ComputerSystem::checkForFutureViolation(
 //	cout << "ComputerSystem: " << "Distance between plane " << plane1.first
 //			<< " and " << plane2.first << " is "
 //			<< distancesBetweenPlanes.print() << endl;
-	if (distancesBetweenPlanes.x <= HORIZONTAL_LIMIT
-			|| distancesBetweenPlanes.y <= HORIZONTAL_LIMIT
-			|| distancesBetweenPlanes.z <= VERTICAL_LIMIT) {
+	if ((distancesBetweenPlanes.x <= HORIZONTAL_LIMIT
+			|| distancesBetweenPlanes.y <= HORIZONTAL_LIMIT)
+			&& distancesBetweenPlanes.z <= VERTICAL_LIMIT) {
 		int coid = ConnectAttach(0, 0, operatorChid, _NTO_SIDE_CHANNEL, 0);
 		OperatorConsoleCommandMessage sendMsg;
 		sendMsg.plane1 = plane1.first;
@@ -263,6 +286,7 @@ void ComputerSystem::checkForFutureViolation(
 					<< "Couldn't get user request queue from operator console";
 			exit(-1);
 		}
+		ConnectDetach(coid);
 		switch (rcvMsg.userCommandType) {
 		case OPCON_USER_COMMAND_NO_COMMAND_AVAILABLE:
 			cout << "ComputerSystem: " << "ACK from opConsole received" << endl;

@@ -120,8 +120,8 @@ void OperatorConsoleDemo() {
 
 void computerSystemDemo() {
 	pthread_t compSystemTid, opConsoleTid, displayTid;
-	PlaneStartParams params1 = { 1, 1, { 0, 0, 0 }, { 1, 1, 0 } };
-	PlaneStartParams params2 = { 2, 1, { 0, 0, 0 }, { 1000, 1000, 0 } };
+	PlaneStartParams params1 = { 1, 1, { 0, 50000, 20000 }, { 1000, 0, 0 } };
+	PlaneStartParams params2 = { 2, 1, { 50000, 0, 20000 }, { 0, 1000, 0 } };
 	PlaneStartParams params3 = { 3, 3, { 3, 3, 3 }, { 3, 3, 3 } };
 	Plane plane1 = Plane(params1);
 	Plane plane2 = Plane(params2);
@@ -144,11 +144,11 @@ void computerSystemDemo() {
 
 	compSystem.setRadar(radar);
 	compSystem.setCommSystem(commSystem);
-	compSystem.setCongestionDegreeSeconds(5000);
+	compSystem.setCongestionDegreeSeconds(15);
 
 	pthread_create(&opConsoleTid, NULL, &OperatorConsole::start, &opConsole);
 	pthread_create(&displayTid, NULL, &DataDisplay::start, &display);
-	while (opConsole.getChid() == -1 && displayTid == -1)
+	while (opConsole.getChid() == -1 || display.getChid() == -1)
 		;
 
 	compSystem.setDisplayChid(display.getChid());
@@ -164,7 +164,7 @@ void computerSystemDemo() {
 		std::cout << "ComputerSystem: failed to attach to. Exiting thread.";
 		return;
 	}
-	std::this_thread::sleep_for(std::chrono::milliseconds(15 * 1000));
+	std::this_thread::sleep_for(std::chrono::milliseconds(60 * 1000));
 
 	ComputerSystemMessage msg;
 	msg.command = COMMAND_EXIT_THREAD;
@@ -173,11 +173,33 @@ void computerSystemDemo() {
 	} else {
 		cout << "Unable to shut down compSystem." << endl;
 	}
+	ConnectDetach(compSystemCoid);
+	pthread_join(compSystemTid, NULL);
+
+	dataDisplayCommandMessage ddMsg;
+	ddMsg.commandType = COMMAND_EXIT_THREAD;
+	int ddCoid = ConnectAttach(0, 0, display.getChid(), _NTO_SIDE_CHANNEL, 0);
+	MsgSend(ddCoid, &ddMsg, sizeof(ddMsg), NULL, 0);
+	ConnectDetach(ddCoid);
+	pthread_join(displayTid, NULL);
+
+	OperatorConsoleCommandMessage ocMsg;
+	ocMsg.systemCommandType = COMMAND_EXIT_THREAD;
+	int ocCoid = ConnectAttach(0, 0, opConsole.getChid(), _NTO_SIDE_CHANNEL, 0);
+	MsgSend(ocCoid, &ocMsg, sizeof(ocMsg), NULL, 0);
+	ConnectDetach(ocCoid);
+	pthread_join(opConsoleTid, NULL);
 
 	for (size_t i = 0; i < planes.size(); i++) {
+		PlaneCommandMessage exitMsg;
+		exitMsg.command = COMMAND_EXIT_THREAD;
+		int planeCoid = ConnectAttach(0, 0, planes[i].getChid(),
+				_NTO_SIDE_CHANNEL, 0);
+		MsgSend(planeCoid, &exitMsg, sizeof(exitMsg), NULL, 0);
+		ConnectDetach(planeCoid);
 		pthread_join(planeThreads[i], NULL);
 	}
-	pthread_join(compSystemTid, NULL);
+
 }
 
 int main() {
