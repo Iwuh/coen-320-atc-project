@@ -120,8 +120,8 @@ void OperatorConsoleDemo() {
 
 void computerSystemDemo() {
 	pthread_t compSystemTid, opConsoleTid, displayTid;
-	PlaneStartParams params1 = { 1, 1, { 0, 0, 0 }, { 1, 1, 0 } };
-	PlaneStartParams params2 = { 2, 1, { 0, 0, 0 }, { 1000, 1000, 0 } };
+	PlaneStartParams params1 = { 1, 1, { 0, 50000, 20000 }, { 1000, 0, 0 } };
+	PlaneStartParams params2 = { 2, 1, { 50000, 0, 20000 }, { 0, 1000, 0 } };
 	PlaneStartParams params3 = { 3, 3, { 3, 3, 3 }, { 3, 3, 3 } };
 	Plane plane1 = Plane(params1);
 	Plane plane2 = Plane(params2);
@@ -144,7 +144,7 @@ void computerSystemDemo() {
 
 	compSystem.setRadar(radar);
 	compSystem.setCommSystem(commSystem);
-	compSystem.setCongestionDegreeSeconds(5000);
+	compSystem.setCongestionDegreeSeconds(15);
 
 	pthread_create(&opConsoleTid, NULL, &OperatorConsole::start, &opConsole);
 	pthread_create(&displayTid, NULL, &DataDisplay::start, &display);
@@ -164,7 +164,7 @@ void computerSystemDemo() {
 		std::cout << "ComputerSystem: failed to attach to. Exiting thread.";
 		return;
 	}
-	std::this_thread::sleep_for(std::chrono::milliseconds(15 * 1000));
+	std::this_thread::sleep_for(std::chrono::milliseconds(60 * 1000));
 
 	ComputerSystemMessage msg;
 	msg.command = COMMAND_EXIT_THREAD;

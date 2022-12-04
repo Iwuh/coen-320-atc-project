@@ -269,9 +269,9 @@ void ComputerSystem::checkForFutureViolation(
 //	cout << "ComputerSystem: " << "Distance between plane " << plane1.first
 //			<< " and " << plane2.first << " is "
 //			<< distancesBetweenPlanes.print() << endl;
-	if (distancesBetweenPlanes.x <= HORIZONTAL_LIMIT
-			|| distancesBetweenPlanes.y <= HORIZONTAL_LIMIT
-			|| distancesBetweenPlanes.z <= VERTICAL_LIMIT) {
+	if ((distancesBetweenPlanes.x <= HORIZONTAL_LIMIT
+			|| distancesBetweenPlanes.y <= HORIZONTAL_LIMIT)
+			&& distancesBetweenPlanes.z <= VERTICAL_LIMIT) {
 		int coid = ConnectAttach(0, 0, operatorChid, _NTO_SIDE_CHANNEL, 0);
 		OperatorConsoleCommandMessage sendMsg;
 		sendMsg.plane1 = plane1.first;
