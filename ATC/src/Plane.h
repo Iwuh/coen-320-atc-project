@@ -38,7 +38,10 @@ typedef struct Vec3 {
 		return {x*scalarMultiplier, y*scalarMultiplier, z*scalarMultiplier};
 	}
 	bool operator==(const Vec3& rhs) {
-		return x == rhs.x && y = rhs.y && z == rhs.z;
+		return x == rhs.x && y == rhs.y && z == rhs.z;
+	}
+	bool operator!=(const Vec3& rhs) {
+		return x != rhs.x && y != rhs.y && z != rhs.z;
 	}
 	int x;
 	int y;

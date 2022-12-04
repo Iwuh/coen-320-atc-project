@@ -10,6 +10,7 @@
 
 class Radar {
 public:
+	Radar();
 	Radar(std::vector<Plane> &planes);
 
 	bool pingPlane(int planeNumber, PlanePositionResponse *out);

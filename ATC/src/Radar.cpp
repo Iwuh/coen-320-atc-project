@@ -2,10 +2,15 @@
 
 #include <sys/siginfo.h>
 
+
+Radar::Radar(){
+
+}
 Radar::Radar(std::vector<Plane> &planes)
 : planes(planes){}
 
-PlanePositionResponse Radar::pingPlane(int planeNumber, PlanePositionResponse *out) {
+bool Radar::pingPlane(int planeNumber, PlanePositionResponse *out) {
+	cout << planes.size() << endl;
 	for (size_t i = 0; i < planes.size(); i++) {
 		if (planes[i].getPlaneId() == planeNumber) {
 			*out = pingPlane(planes[i]);
