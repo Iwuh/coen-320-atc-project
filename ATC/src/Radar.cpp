@@ -2,6 +2,30 @@
 
 #include <sys/siginfo.h>
 
+Radar::Radar(std::vector<Plane> &planes)
+: planes(planes){}
+
+PlanePositionResponse Radar::pingPlane(int planeNumber, PlanePositionResponse *out) {
+	for (size_t i = 0; i < planes.size(); i++) {
+		if (planes[i].getPlaneId() == planeNumber) {
+			*out = pingPlane(planes[i]);
+			return true;
+		}
+	}
+	return false;
+}
+std::map<int, PlanePositionResponse> Radar::pingAirspace() {
+	constexpr Vec3 NOT_IN_AIRSPACE{-1,-1,-1};
+	std::map<int, PlanePositionResponse> map;
+	for (size_t i = 0; i < planes.size(); i++) {
+		PlanePositionResponse res = pingPlane(planes[i]);
+		if (res.currentPosition != NOT_IN_AIRSPACE) {
+			map[planes[i].getPlaneId()] = std::move(res);
+		}
+	}
+	return map;
+}
+
 PlanePositionResponse Radar::pingPlane(Plane &p)
 {
 	// Connect to plane's message passing channel.
