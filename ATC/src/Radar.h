@@ -3,28 +3,14 @@
 #ifndef SRC_RADAR_H_
 #define SRC_RADAR_H_
 
-#include <stdlib.h>
-#include <sys/neutrino.h>
-#include <iostream>
+#include <vector>
 
 #include "Plane.h"
 
-
-
 class Radar {
-
 public:
-
-	int getChid() const;
-
-
-
 	PlanePositionResponse pingPlane(Plane &p);
-	planePositionResponse pingMultiplePlanes(std::vector<Plane&> planes);
-
-private:
-	int chid;
-
+	std::vector<PlanePositionResponse> pingMultiplePlanes(std::vector<Plane> &planes);
 };
 
 #endif /* SRC_RADAR_H_ */
