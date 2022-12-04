@@ -8,11 +8,10 @@
 #include "CommunicationSystem.h"
 #include "commandCodes.h"
 
-
-CommunicationSystem::CommunicationSystem(){
+CommunicationSystem::CommunicationSystem() {
 }
-CommunicationSystem::CommunicationSystem(std::vector<Plane> &planes)
-	: planes(planes) {
+CommunicationSystem::CommunicationSystem(std::vector<Plane> &planes) :
+		planes(planes) {
 
 }
 
@@ -41,7 +40,7 @@ bool CommunicationSystem::send(Plane &R, Vec3 &newVelocity) {
 	msg.newVelocity = newVelocity; //setting the new velocity
 
 	sndid = MsgSend(coid, &msg, sizeof(msg), NULL, 0); //NULL & 0 since not expecting a reply
-
+	ConnectDetach(coid);
 	if (sndid == -1) {
 		std::cout << "Message failed to send!" << std::endl;
 		return false;

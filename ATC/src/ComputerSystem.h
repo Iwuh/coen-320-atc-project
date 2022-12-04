@@ -33,7 +33,7 @@ private:
 	void run();
 	void listen();
 	void createPeriodicTasks();
-	void logSystem();
+	void logSystem(bool toFile);
 	void violationCheck();
 	void opConCheck();
 	void sendDisplayCommand(int planeNumber);

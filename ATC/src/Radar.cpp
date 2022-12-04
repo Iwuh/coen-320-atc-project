@@ -40,6 +40,8 @@ PlanePositionResponse Radar::pingPlane(Plane &p) {
 	msg.command = COMMAND_RADAR_PING;
 	PlanePositionResponse res;
 	MsgSend(coid, &msg, sizeof(msg), &res, sizeof(res));
+
+	ConnectDetach(coid);
 	return res;
 }
 

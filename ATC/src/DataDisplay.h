@@ -8,6 +8,7 @@
 #ifndef SRC_DATADISPLAY_H_
 #define SRC_DATADISPLAY_H_
 
+#include <string>
 #include "Plane.h"
 
 //for one aircraft
@@ -40,11 +41,12 @@ class DataDisplay {
 private:
 	void run();
 	void receiveMessage();
+	std::string generateGrid(multipleAircraftDisplay &airspaceInfo);
 
 	int chid;
+	int fd;
 public:
 	DataDisplay();
-	virtual ~DataDisplay();
 
 	int getChid() const;
 	static void* start(void *context);
