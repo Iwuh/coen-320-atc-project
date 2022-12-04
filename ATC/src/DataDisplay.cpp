@@ -154,6 +154,7 @@ std::string DataDisplay::generateGrid(multipleAircraftDisplay &airspaceInfo)
 			}
 		}
 	}
+	output << std::endl;
 	return output.str();
 }
 

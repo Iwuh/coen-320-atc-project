@@ -193,6 +193,7 @@ void ComputerSystem::opConCheck() {
 				<< "Couldn't get user request queue from operator console";
 		exit(-1);
 	}
+	ConnectDetach(coid);
 	switch (rcvMsg.userCommandType) {
 	case OPCON_USER_COMMAND_NO_COMMAND_AVAILABLE:
 		break;
@@ -221,6 +222,7 @@ void ComputerSystem::sendDisplayCommand(int planeNumber) {
 					<< "Couldn't send command to the display.";
 			exit(-1);
 		}
+		ConnectDetach(coid);
 	} else {
 		cout
 				<< "The plane requested to update the position is not found in the airspace"
@@ -283,6 +285,7 @@ void ComputerSystem::checkForFutureViolation(
 					<< "Couldn't get user request queue from operator console";
 			exit(-1);
 		}
+		ConnectDetach(coid);
 		switch (rcvMsg.userCommandType) {
 		case OPCON_USER_COMMAND_NO_COMMAND_AVAILABLE:
 			cout << "ComputerSystem: " << "ACK from opConsole received" << endl;
