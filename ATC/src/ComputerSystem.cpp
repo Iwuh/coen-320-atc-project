@@ -56,7 +56,7 @@ void ComputerSystem::createPeriodicTasks() {
 
 	periodicTask periodicTasks[COMPUTER_SYSTEM_NUM_PERIODIC_TASKS] = { {
 	AIRSPACE_VIOLATION_CONSTRAINT_TIMER, 1 }, { LOG_AIRSPACE_TO_CONSOLE_TIMER, 5 }, {
-	OPERATOR_COMMAND_CHECK_TIMER, 1 }, {LOG_AIRSPACE_TO_FILE_TIMER, 10} }; // TODO change file logging to 30 second period
+	OPERATOR_COMMAND_CHECK_TIMER, 1 }, {LOG_AIRSPACE_TO_FILE_TIMER, 30} };
 
 	// Create a new communication channel belonging to the plane and store the handle in chid.
 	if ((chid = ChannelCreate(0)) == -1) {
