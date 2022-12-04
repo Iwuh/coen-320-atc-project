@@ -16,6 +16,7 @@
 #include "OperatorConsole.h"
 #include "DataDisplay.h"
 #include "CommunicationSystem.h"
+#include "InputStrings.h"
 
 int64_t now() {
 	struct timespec now;
@@ -180,7 +181,39 @@ void computerSystemDemo() {
 	pthread_join(compSystemTid, NULL);
 }
 
+void writeFiles() {
+	int fdlow = creat("/data/home/qnxuser/lowload.txt",
+	S_IRUSR | S_IWUSR | S_IXUSR);
+	if (fdlow != -1) {
+		write(fdlow, LOW_LOAD, strlen(LOW_LOAD));
+		close(fdlow);
+	}
+
+	int fdmed = creat("/data/home/qnxuser/medload.txt",
+	S_IRUSR | S_IWUSR | S_IXUSR);
+	if (fdmed != -1) {
+		write(fdmed, MED_LOAD, strlen(MED_LOAD));
+		close(fdmed);
+	}
+
+	int fdhigh = creat("/data/home/qnxuser/highload.txt",
+	S_IRUSR | S_IWUSR | S_IXUSR);
+	if (fdhigh != -1) {
+		write(fdhigh, HIGH_LOAD, strlen(HIGH_LOAD));
+		close(fdhigh);
+	}
+}
+
 int main() {
+	std::string choice = "";
+	while (choice != "write" && choice != "run") {
+		std::cout
+				<< "Enter 'write' to create the input files in the QNX VM. Enter 'run' to run the ATC simulation.";
+		cin >> choice;
+	}
+	if (choice == "write") {
+
+	}
 	//planeDemo();
 	computerSystemDemo();
 //	OperatorConsoleDemo();
