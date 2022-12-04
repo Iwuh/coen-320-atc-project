@@ -164,7 +164,7 @@ void computerSystemDemo() {
 		std::cout << "ComputerSystem: failed to attach to. Exiting thread.";
 		return;
 	}
-	std::this_thread::sleep_for(std::chrono::milliseconds(15 * 1000));
+	std::this_thread::sleep_for(std::chrono::milliseconds(25 * 1000));
 
 	ComputerSystemMessage msg;
 	msg.command = COMMAND_EXIT_THREAD;

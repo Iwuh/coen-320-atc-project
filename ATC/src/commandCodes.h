@@ -17,10 +17,12 @@
 // To create timers for periodic tasks we need to know the amount
 // Timer code to fire to perform violation checks
 #define AIRSPACE_VIOLATION_CONSTRAINT_TIMER 11
-// Timer code to fire to update logfile with airspace state
-#define LOG_AIRSPACE_TIMER 12
+// Timer code to fire to print airspace state to console
+#define LOG_AIRSPACE_TO_CONSOLE_TIMER 12
 // Timer code to fire a request to operator console for command info
 #define OPERATOR_COMMAND_CHECK_TIMER 13
+// Timer code to fire to print airspace state to log file
+#define LOG_AIRSPACE_TO_FILE_TIMER 14
 
 // Inbound command to the system to process operator request
 #define COMMAND_OPERATOR_REQUEST 111

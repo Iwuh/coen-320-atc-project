@@ -49,13 +49,14 @@ void ComputerSystem::createPeriodicTasks() {
 	 * Save the airspace state and operator requests to the logfile - every 30 seconds
 	 * Codes corresponding to the index of the timer in the array are:
 	 * AIRSPACE_VIOLATION_CONSTRAINT_TIMER 0
-	 * LOG_AIRSPACE_TIMER 1
+	 * LOG_AIRSPACE_TO_CONSOLE_TIMER 1
 	 * OPCON_USER_ACTION_TIMER 2
+	 * LOG_AIRSPACE_TO_FILE_TIMER 3
 	 */
 
 	periodicTask periodicTasks[COMPUTER_SYSTEM_NUM_PERIODIC_TASKS] = { {
-	AIRSPACE_VIOLATION_CONSTRAINT_TIMER, 1 }, { LOG_AIRSPACE_TIMER, 5 }, {
-	OPERATOR_COMMAND_CHECK_TIMER, 1 } };
+	AIRSPACE_VIOLATION_CONSTRAINT_TIMER, 1 }, { LOG_AIRSPACE_TO_CONSOLE_TIMER, 5 }, {
+	OPERATOR_COMMAND_CHECK_TIMER, 1 }, {LOG_AIRSPACE_TO_FILE_TIMER, 10} }; // TODO change file logging to 30 second period
 
 	// Create a new communication channel belonging to the plane and store the handle in chid.
 	if ((chid = ChannelCreate(0)) == -1) {
@@ -104,14 +105,17 @@ void ComputerSystem::listen() {
 		if (rcvid == 0) {
 			// Handle internal switches from the pulses of the various timers.
 			switch (msg.header.code) {
-			case LOG_AIRSPACE_TIMER:
-				logSystem();
+			case LOG_AIRSPACE_TO_CONSOLE_TIMER:
+				logSystem(false);
 				break;
 			case AIRSPACE_VIOLATION_CONSTRAINT_TIMER:
 				violationCheck();
 				break;
 			case OPERATOR_COMMAND_CHECK_TIMER:
 				opConCheck();
+				break;
+			case LOG_AIRSPACE_TO_FILE_TIMER:
+				logSystem(true);
 				break;
 			default:
 				std::cout
@@ -141,7 +145,7 @@ void ComputerSystem::listen() {
 	}
 }
 
-void ComputerSystem::logSystem() {
+void ComputerSystem::logSystem(bool toFile) {
 	this->airspace = radar.pingAirspace();
 	size_t aircraftCount = airspace.size();
 	int *idArray = new int[aircraftCount];
@@ -155,7 +159,11 @@ void ComputerSystem::logSystem() {
 	}
 
 	dataDisplayCommandMessage msg;
-	msg.commandType = COMMAND_GRID;
+	if (toFile) {
+		msg.commandType = COMMAND_LOG;
+	} else {
+		msg.commandType = COMMAND_GRID;
+	}
 	msg.commandBody.multiple.numberOfAircrafts = aircraftCount;
 	msg.commandBody.multiple.planeIDArray = idArray;
 	msg.commandBody.multiple.positionArray = positionArray;
