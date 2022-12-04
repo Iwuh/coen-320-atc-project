@@ -13,7 +13,6 @@
 #include <iostream>
 #include <time.h>
 #include "Plane.h"
-#include "OperatorConsole.h"
 
 int64_t now() {
 	struct timespec now;
@@ -86,37 +85,6 @@ void planeDemo() {
 	pthread_join(tid, NULL);
 }
 
-void OperatorConsoleDemo()
-{
-	OperatorConsole oc;
-	pthread_t tid;
-	pthread_create(&tid, NULL, &OperatorConsole::start, &oc);
-
-	while (oc.getChid() == -1)
-		;
-	int coid = ConnectAttach(0,0,oc.getChid(),_NTO_SIDE_CHANNEL,0);
-
-	int64_t sleepUntil;
-	for (int i = 0; i < 3; i++) {
-		sleepUntil = now() + 10L * 1000L * 1000L * 1000L;
-		while (now() < sleepUntil)
-			;
-
-		OperatorConsoleCommandMessage sndMsg;
-		OperatorConsoleResponseMessage rcvMsg;
-		sndMsg.systemCommandType = OPCON_CONSOLE_COMMAND_GET_USER_COMMAND;
-		MsgSend(coid, &sndMsg, sizeof(sndMsg), &rcvMsg, sizeof(rcvMsg));
-		std::cout << rcvMsg.userCommandType << std::endl;
-	}
-
-	OperatorConsoleCommandMessage msg;
-	msg.systemCommandType = COMMAND_EXIT_THREAD;
-	MsgSend(coid, &msg, sizeof(msg), NULL, 0);
-	// N.B.: The program will likely hang here until you press enter in the console one more time.
-	// Can't do much about it, it's because std::getline is a blocking operation.
-	pthread_join(tid, NULL);
-}
-
 void computerSystemDemo() {
 	pthread_t tid, mockRadarTid;
 	ComputerSystem compSystem;
@@ -160,8 +128,7 @@ void computerSystemDemo() {
 }
 
 int main() {
-	//planeDemo();
-	//computerSystemDemo();
-	OperatorConsoleDemo();
+	planeDemo();
+	computerSystemDemo();
 	return 0;
 }
