@@ -21,6 +21,9 @@
 
 typedef struct {
 	int systemCommandType;
+	int plane1;
+	int plane2;
+	int collisionTimeSeconds;
 } OperatorConsoleCommandMessage;
 
 typedef struct {

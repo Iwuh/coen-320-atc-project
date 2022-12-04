@@ -5,6 +5,8 @@
 #include <iostream>
 #include <map>
 #include "Plane.h"
+#include "Radar.h"
+#include "CommunicationSystem.h"
 
 using namespace std;
 
@@ -23,7 +25,8 @@ public:
 	ComputerSystem();
 	int getChid() const;
 	void setOperatorChid(int id);
-	void setRadarChid(int id);
+	void setRadar(Radar &radar);
+	void setCommSystem(CommunicationSystem &commSystem);
 	void setDisplayChid(int id);
 	void setCongestionDegreeSeconds(int congestionDegreeSeconds);
 private:
@@ -32,14 +35,19 @@ private:
 	void createPeriodicTasks();
 	void logSystem();
 	void violationCheck();
-	void checkForFutureViolation(std::pair<int, PlanePositionResponse> plane1, std::pair<int, PlanePositionResponse> plane2);
+	void opConCheck();
+	void sendDisplayCommand(int planeNumber);
+	void sendVelocityUpdateToComm(int planeNumber, Vec3 newVelocity);
+	void checkForFutureViolation(std::pair<int, PlanePositionResponse> plane1,
+			std::pair<int, PlanePositionResponse> plane2);
 	int chid;
 	int operatorChid;
-	int radarChid;
 	int displayChid;
+	Radar radar;
+	CommunicationSystem commSystem;
 	Vec3 airspaceBounds;
 	int congestionDegreeSeconds;
-	std::map<int, PlanePositionResponse> airspace;
+	std::vector<pair<int, PlanePositionResponse>> airspace;
 public:
 	static void* start(void *context);
 };

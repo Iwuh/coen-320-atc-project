@@ -5,9 +5,11 @@
 #include "commandCodes.h"
 #include "constants.h"
 #include "inlineStaticHelpers.h"
+#include "OperatorConsole.h"
+#include "DataDisplay.h"
 
 ComputerSystem::ComputerSystem() :
-		chid(-1), operatorChid(-1), radarChid(-1), displayChid(-1) {
+		chid(-1), operatorChid(-1), displayChid(-1), congestionDegreeSeconds(-1) {
 }
 
 int ComputerSystem::getChid() const {
@@ -18,8 +20,12 @@ void ComputerSystem::setOperatorChid(int id) {
 	operatorChid = id;
 }
 
-void ComputerSystem::setRadarChid(int id) {
-	radarChid = id;
+void ComputerSystem::setRadar(Radar &radar) {
+	this->radar = radar;
+}
+
+void ComputerSystem::setCommSystem(CommunicationSystem &commSystem) {
+	this->commSystem = commSystem;
 }
 
 void ComputerSystem::setDisplayChid(int id) {
@@ -44,16 +50,16 @@ void ComputerSystem::createPeriodicTasks() {
 	 * Codes corresponding to the index of the timer in the array are:
 	 * AIRSPACE_VIOLATION_CONSTRAINT_TIMER 0
 	 * LOG_AIRSPACE_TIMER 1
+	 * OPCON_USER_ACTION_TIMER 2
 	 */
 
-	periodicTask periodicTasks[COMPUTER_SYSTEM_NUM_PERIODIC_TASKS] =
-			{ { AIRSPACE_VIOLATION_CONSTRAINT_TIMER, 2 }, { LOG_AIRSPACE_TIMER,
-					5 } };
+	periodicTask periodicTasks[COMPUTER_SYSTEM_NUM_PERIODIC_TASKS] = { {
+	AIRSPACE_VIOLATION_CONSTRAINT_TIMER, 1 }, { LOG_AIRSPACE_TIMER, 5 }, {
+	OPERATOR_COMMAND_CHECK_TIMER, 1 } };
 
 	// Create a new communication channel belonging to the plane and store the handle in chid.
 	if ((chid = ChannelCreate(0)) == -1) {
-		std::cout << "ComputerSystem: channel creation failed. Exiting thread."
-				<< std::endl;
+		std::cout << "channel creation failed. Exiting thread." << std::endl;
 		return;
 	}
 
@@ -104,6 +110,9 @@ void ComputerSystem::listen() {
 			case AIRSPACE_VIOLATION_CONSTRAINT_TIMER:
 				violationCheck();
 				break;
+			case OPERATOR_COMMAND_CHECK_TIMER:
+				opConCheck();
+				break;
 			default:
 				std::cout
 						<< "ComputerSystem: received pulse with unknown code: "
@@ -119,11 +128,11 @@ void ComputerSystem::listen() {
 				break;
 			case COMMAND_EXIT_THREAD:
 				// Required to allow all threads to gracefully terminate when the program is terminating
-				cout << "Received EXIT command";
+				cout << "ComputerSystem: " << "Received EXIT command";
 				MsgReply(rcvid, EOK, NULL, 0);
 				return;
 			default:
-				std::cout << "ComputerSystem: received unknown command "
+				std::cout << "ComputerSystem: " << "received unknown command "
 						<< msg.command << std::endl;
 				MsgError(rcvid, ENOSYS);
 				break;
@@ -135,7 +144,6 @@ void ComputerSystem::listen() {
 void ComputerSystem::logSystem() {
 	ofstream logfile;
 	printCurrentTime();
-	cout << endl;
 	for (auto const &x : airspace) {
 		logfile.open("logfile.txt");
 		logfile << x.first << ":" << std::to_string(x.second.currentPosition.x)
@@ -154,37 +162,66 @@ void ComputerSystem::logSystem() {
 	logfile.close();
 }
 
-void ComputerSystem::violationCheck() {
-	ComputerSystemMessage msg;
-	msg.command = COMMAND_UPDATE_PLANE_COUNT;
-	//Update airspace via message-passing from radar
-	//Request the number of planes first
-	int numberOfPlanesInAirspace = 0;
-	int coid = ConnectAttach(0, 0, radarChid, _NTO_SIDE_CHANNEL, 0);
-	if (MsgSend(coid, &msg, sizeof(msg), &numberOfPlanesInAirspace,
-			sizeof(numberOfPlanesInAirspace)) == -1) {
-		cout << "Couldn't update airspace count";
-		exit(-1); //TODO: Error scenarios
-	}
-	std::pair<int, PlanePositionResponse> radarResults[numberOfPlanesInAirspace];
-
-	msg.command = COMMAND_UPDATE_AIRSPACE;
-	if (MsgSend(coid, &msg, sizeof(msg), radarResults, sizeof(radarResults))
+void ComputerSystem::opConCheck() {
+	int coid = ConnectAttach(0, 0, operatorChid, _NTO_SIDE_CHANNEL, 0);
+	OperatorConsoleCommandMessage sendMsg;
+	OperatorConsoleResponseMessage rcvMsg;
+	sendMsg.systemCommandType = OPCON_CONSOLE_COMMAND_GET_USER_COMMAND;
+	if (MsgSend(coid, &sendMsg, sizeof(sendMsg), &rcvMsg, sizeof(rcvMsg))
 			== -1) {
-		cout << "Couldn't update airspace";
-		exit(-1); //TODO: Error scenarios
+		cout << "ComputerSystem: "
+				<< "Couldn't get user request queue from operator console";
+		exit(-1);
 	}
+	switch (rcvMsg.userCommandType) {
+	case OPCON_USER_COMMAND_NO_COMMAND_AVAILABLE:
+		break;
+	case OPCON_USER_COMMAND_DISPLAY_PLANE_INFO:
+		sendDisplayCommand(rcvMsg.planeNumber); // open disp channel and send msg
+		break;
+	case OPCON_USER_COMMAND_SET_PLANE_VELOCITY:
+		sendVelocityUpdateToComm(rcvMsg.planeNumber, rcvMsg.newVelocity); // open comm channel and send msg
+		break;
+	}
+}
 
-	for (int i = 0; i < numberOfPlanesInAirspace; i++) {
-		auto const result = airspace.insert(radarResults[i]);
-		if (not result.second) { //This will update the value if the value already existed
-			result.first->second = radarResults[i].second;
+void ComputerSystem::sendDisplayCommand(int planeNumber) {
+	// Request radar for an update position on the plane
+	// Open connection to display and send display message
+	PlanePositionResponse out;
+	if (radar.pingPlane(planeNumber, &out)) {
+		int coid = ConnectAttach(0, 0, displayChid, _NTO_SIDE_CHANNEL, 0);
+		dataDisplayCommandMessage sendMsg;
+		sendMsg.commandType = COMMAND_ONE_PLANE;
+		sendMsg.commandBody.one.aircraftID = planeNumber;
+		sendMsg.commandBody.one.position = out.currentPosition;
+		sendMsg.commandBody.one.velocity = out.currentVelocity;
+		if (MsgSend(coid, &sendMsg, sizeof(sendMsg), NULL, 0) == -1) {
+			cout << "ComputerSystem: "
+					<< "Couldn't send command to the display.";
+			exit(-1);
 		}
+	} else {
+		cout
+				<< "The plane requested to update the position is not found in the airspace"
+				<< endl;
 	}
+}
+
+void ComputerSystem::sendVelocityUpdateToComm(int planeNumber,
+		Vec3 newVelocity) {
+	// Request radar for the plane for sanity purposes
+	// Open connection to comm and send update message
+	cout << "ComputerSystem: " << "Sending message to comm" << endl;
+}
+
+void ComputerSystem::violationCheck() {
+	cout << "ComputerSystem: " << "Running violation check..." << endl;
+	this->airspace = radar.pingAirspace();
 	//Perform sequential validation, in case of a collision send out an alert to the operator and an update to the display
-	for (int i = 0; i < numberOfPlanesInAirspace; i++) {
-		for (int j = i + 1; j < numberOfPlanesInAirspace; j++) {
-			checkForFutureViolation(radarResults[i], radarResults[j]);
+	for (size_t i = 0; i < airspace.size(); i++) {
+		for (size_t j = i + 1; j < airspace.size(); j++) {
+			checkForFutureViolation(airspace[i], airspace[j]);
 		}
 	}
 }
@@ -206,10 +243,31 @@ void ComputerSystem::checkForFutureViolation(
 					congestionDegreeSeconds));
 	Vec3 distancesBetweenPlanes = plane1posInCongestionSeconds.absoluteDiff(
 			plane2posInCongestionSeconds);
+// Debug print
+//	cout << "ComputerSystem: " << "Distance between plane " << plane1.first
+//			<< " and " << plane2.first << " is "
+//			<< distancesBetweenPlanes.print() << endl;
 	if (distancesBetweenPlanes.x <= HORIZONTAL_LIMIT
 			|| distancesBetweenPlanes.y <= HORIZONTAL_LIMIT
 			|| distancesBetweenPlanes.z <= VERTICAL_LIMIT) {
-		// TODO: raise alert
+		int coid = ConnectAttach(0, 0, operatorChid, _NTO_SIDE_CHANNEL, 0);
+		OperatorConsoleCommandMessage sendMsg;
+		sendMsg.plane1 = plane1.first;
+		sendMsg.plane2 = plane2.first;
+		sendMsg.collisionTimeSeconds = congestionDegreeSeconds;
+		OperatorConsoleResponseMessage rcvMsg;
+		sendMsg.systemCommandType = OPCON_CONSOLE_COMMAND_ALERT;
+		if (MsgSend(coid, &sendMsg, sizeof(sendMsg), &rcvMsg, sizeof(rcvMsg))
+				== -1) {
+			cout << "ComputerSystem: "
+					<< "Couldn't get user request queue from operator console";
+			exit(-1);
+		}
+		switch (rcvMsg.userCommandType) {
+		case OPCON_USER_COMMAND_NO_COMMAND_AVAILABLE:
+			cout << "ComputerSystem: " << "ACK from opConsole received" << endl;
+			break;
+		}
 		return;
 	}
 }

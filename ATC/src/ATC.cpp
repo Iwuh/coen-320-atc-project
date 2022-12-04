@@ -8,12 +8,14 @@
 #include <thread>
 
 #include "ComputerSystem.h"
-#include "mockRadar.h"
+#include "Radar.h"
 
 #include <iostream>
 #include <time.h>
 #include "Plane.h"
 #include "OperatorConsole.h"
+#include "DataDisplay.h"
+#include "CommunicationSystem.h"
 
 int64_t now() {
 	struct timespec now;
@@ -86,15 +88,14 @@ void planeDemo() {
 	pthread_join(tid, NULL);
 }
 
-void OperatorConsoleDemo()
-{
+void OperatorConsoleDemo() {
 	OperatorConsole oc;
 	pthread_t tid;
 	pthread_create(&tid, NULL, &OperatorConsole::start, &oc);
 
 	while (oc.getChid() == -1)
 		;
-	int coid = ConnectAttach(0,0,oc.getChid(),_NTO_SIDE_CHANNEL,0);
+	int coid = ConnectAttach(0, 0, oc.getChid(), _NTO_SIDE_CHANNEL, 0);
 
 	int64_t sleepUntil;
 	for (int i = 0; i < 3; i++) {
@@ -118,12 +119,42 @@ void OperatorConsoleDemo()
 }
 
 void computerSystemDemo() {
-	pthread_t tid, mockRadarTid;
+	pthread_t compSystemTid, opConsoleTid, displayTid;
+	PlaneStartParams params1 = { 1, 1, { 0, 0, 0 }, { 1, 1, 0 } };
+	PlaneStartParams params2 = { 2, 1, { 0, 0, 0 }, { 1000, 1000, 0 } };
+	PlaneStartParams params3 = { 3, 3, { 3, 3, 3 }, { 3, 3, 3 } };
+	Plane plane1 = Plane(params1);
+	Plane plane2 = Plane(params2);
+	Plane plane3 = Plane(params3);
+	vector<Plane> planes { plane1, plane2, plane3 };
+
+	int numOfPlanes = planes.size();
+	pthread_t planeThreads[numOfPlanes];
+
+	for (size_t i = 0; i < planes.size(); i++) {
+		pthread_create(&planeThreads[i], NULL, &Plane::start, &planes[i]);
+	}
+
 	ComputerSystem compSystem;
-	Radar mockRadar;
-	pthread_create(&mockRadarTid, NULL, &Radar::start, &mockRadar);
-	compSystem.setRadarChid(mockRadar.getChid());
-	pthread_create(&tid, NULL, &ComputerSystem::start, &compSystem);
+	OperatorConsole opConsole;
+	DataDisplay display;
+
+	CommunicationSystem commSystem = CommunicationSystem(planes);
+	Radar radar = Radar(planes);
+
+	compSystem.setRadar(radar);
+	compSystem.setCommSystem(commSystem);
+	compSystem.setCongestionDegreeSeconds(5000);
+
+	pthread_create(&opConsoleTid, NULL, &OperatorConsole::start, &opConsole);
+	pthread_create(&displayTid, NULL, &DataDisplay::start, &display);
+	while (opConsole.getChid() == -1 && displayTid == -1)
+		;
+
+	compSystem.setDisplayChid(display.getChid());
+	compSystem.setOperatorChid(opConsole.getChid());
+	pthread_create(&compSystemTid, NULL, &ComputerSystem::start, &compSystem);
+
 	// If I don't sleep here the results are intermittent for the attach
 	std::this_thread::sleep_for(std::chrono::milliseconds(1 * 1000));
 
@@ -133,35 +164,25 @@ void computerSystemDemo() {
 		std::cout << "ComputerSystem: failed to attach to. Exiting thread.";
 		return;
 	}
-	int mockRadarCoid = 0;
-	if ((mockRadarCoid = ConnectAttach(0, 0, mockRadar.getChid(),
-			_NTO_SIDE_CHANNEL, 0)) == -1) {
-		std::cout << "MockRadar: failed to attach to. Exiting thread.";
-		return;
-	}
-	mockRadar.addPlaneToAirspace(1, { { 0, 10, 0 }, { 2, -2, 0 } });
-	mockRadar.addPlaneToAirspace(20, { { 1, 12, 0 }, { 2, -2, -8 } });
-	mockRadar.addPlaneToAirspace(11, { { 0, 11, 0 }, { 2, -2, 0 } });
-	mockRadar.addPlaneToAirspace(111, { { 0, 111, 0 }, { 2, -2, 0 } });
-	mockRadar.addPlaneToAirspace(30, { { 0, 0, 0 }, { 2, 2, 0 } });
-	std::this_thread::sleep_for(std::chrono::milliseconds(3 * 1000));
-	cout << "SENDING EXIT" << endl;
+	std::this_thread::sleep_for(std::chrono::milliseconds(15 * 1000));
 
 	ComputerSystemMessage msg;
 	msg.command = COMMAND_EXIT_THREAD;
 	if (MsgSend(compSystemCoid, &msg, sizeof(msg), NULL, 0) == 0) {
-		MsgSend(mockRadarCoid, &msg, sizeof(msg), NULL, 0);
+		cout << "Shut down compSystem" << endl;
 	} else {
 		cout << "Unable to shut down compSystem." << endl;
 	}
 
-	pthread_join(tid, NULL);
-	pthread_join(mockRadarTid, NULL);
+	for (size_t i = 0; i < planes.size(); i++) {
+		pthread_join(planeThreads[i], NULL);
+	}
+	pthread_join(compSystemTid, NULL);
 }
 
 int main() {
 	//planeDemo();
-	//computerSystemDemo();
-	OperatorConsoleDemo();
+	computerSystemDemo();
+//	OperatorConsoleDemo();
 	return 0;
 }

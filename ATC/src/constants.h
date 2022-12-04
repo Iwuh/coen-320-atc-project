@@ -11,4 +11,4 @@
 #define TIME_RANGE_SECONDS 180
 
 //Number of periodic tasks in the computerSystem class
-#define COMPUTER_SYSTEM_NUM_PERIODIC_TASKS 2
+#define COMPUTER_SYSTEM_NUM_PERIODIC_TASKS 3

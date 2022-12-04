@@ -1,5 +1,4 @@
 
-
 #ifndef SRC_RADAR_H_
 #define SRC_RADAR_H_
 
@@ -10,14 +9,16 @@
 
 class Radar {
 public:
+	Radar();
 	Radar(std::vector<Plane> &planes);
 
 	bool pingPlane(int planeNumber, PlanePositionResponse *out);
-	std::map<int, PlanePositionResponse> pingAirspace();
+	std::vector<pair<int, PlanePositionResponse>> pingAirspace();
 
 private:
 	PlanePositionResponse pingPlane(Plane &p);
-	std::vector<PlanePositionResponse> pingMultiplePlanes(std::vector<Plane> &planes);
+	std::vector<PlanePositionResponse> pingMultiplePlanes(
+			std::vector<Plane> &planes);
 
 	std::vector<Plane> planes;
 };
