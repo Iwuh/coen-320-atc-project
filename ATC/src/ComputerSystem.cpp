@@ -292,13 +292,6 @@ void ComputerSystem::checkForFutureViolation(
 	Vec3 plane2projection = plane2.second.currentPosition.sum(
 			plane2.second.currentVelocity.scalarMultiplication(
 					congestionDegreeSeconds));
-	Vec3 distancesBetweenPlanes = plane1projection.absoluteDiff(
-			plane2projection);
-	//std::cout << plane1projection << ' ' << plane2projection << ' ' << distancesBetweenPlanes << std::endl;
-// Debug print
-//	cout << "ComputerSystem: " << "Distance between plane " << plane1.first
-//			<< " and " << plane2.first << " is "
-//			<< distancesBetweenPlanes.print() << endl;
 	// 3D overlap algorithm based on https://stackoverflow.com/a/20925869
 	int x1min = plane1projection.x - HORIZONTAL_LIMIT;
 	int x1max = plane1projection.x + HORIZONTAL_LIMIT;
@@ -312,7 +305,8 @@ void ComputerSystem::checkForFutureViolation(
 	int z1max = plane1projection.z + VERTICAL_LIMIT;
 	int z2min = plane2projection.z - VERTICAL_LIMIT;
 	int z2max = plane2projection.z + VERTICAL_LIMIT;
-	if ((x1max >= x2min && x2max >= x1min) && (y1max >= y2min && y2max >= y1min) && (z1max >= z2min && z2max >= z1min)) {
+	if ((x1max >= x2min && x2max >= x1min) && (y1max >= y2min && y2max >= y1min)
+			&& (z1max >= z2min && z2max >= z1min)) {
 		int coid = ConnectAttach(0, 0, operatorChid, _NTO_SIDE_CHANNEL, 0);
 		OperatorConsoleCommandMessage sendMsg;
 		sendMsg.plane1 = plane1.first;
