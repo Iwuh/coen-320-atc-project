@@ -1,10 +1,3 @@
-/*
- * CommunicationSystem.h
- *
- *  Created on: Nov. 24, 2022
- *      Author: coen320
- */
-
 #ifndef SRC_COMMUNICATIONSYSTEM_H_
 #define SRC_COMMUNICATIONSYSTEM_H_
 

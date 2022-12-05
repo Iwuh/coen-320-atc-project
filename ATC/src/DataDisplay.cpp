@@ -1,10 +1,3 @@
-/*
- * DataDisplay.cpp
- *
- *  Created on: Nov. 16, 2022
- *      Author: Ben
- */
-
 #include "DataDisplay.h"
 #include <sys/neutrino.h>
 #include <errno.h>

@@ -1,10 +1,3 @@
-/*
- * CommunicationSystem.cpp
- *
- *  Created on: Nov. 24, 2022
- *      Author: coen320
- */
-
 #include "CommunicationSystem.h"
 #include "commandCodes.h"
 

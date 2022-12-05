@@ -1,10 +1,3 @@
-/*
- * OperatorConsole.cpp
- *
- *  Created on: Nov. 23, 2022
- *      Author: Matthew Faigan
- */
-
 #include "OperatorConsole.h"
 #include <iostream>
 #include <atomic>

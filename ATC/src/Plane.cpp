@@ -1,10 +1,3 @@
-/*
- * Plane.cpp
- *
- *  Created on: Oct. 24, 2022
- *      Author: Matthew Faigan
- */
-
 #include "Plane.h"
 
 #include <iostream>

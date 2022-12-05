@@ -1,10 +1,3 @@
-/*
- * InputStrings.h
- *
- *  Created on: Dec. 4, 2022
- *      Author: matt
- */
-
 #ifndef SRC_INPUTSTRINGS_H_
 #define SRC_INPUTSTRINGS_H_
 
