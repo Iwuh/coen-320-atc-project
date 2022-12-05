@@ -299,6 +299,7 @@ void ComputerSystem::checkForFutureViolation(
 //	cout << "ComputerSystem: " << "Distance between plane " << plane1.first
 //			<< " and " << plane2.first << " is "
 //			<< distancesBetweenPlanes.print() << endl;
+	// 3D overlap algorithm based on https://stackoverflow.com/a/20925869
 	int x1min = plane1projection.x - HORIZONTAL_LIMIT;
 	int x1max = plane1projection.x + HORIZONTAL_LIMIT;
 	int x2min = plane2projection.x - HORIZONTAL_LIMIT;
