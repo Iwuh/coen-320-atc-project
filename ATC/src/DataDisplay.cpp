@@ -77,14 +77,7 @@ void DataDisplay::receiveMessage() {
 			}
 			break;
 		}
-		case COMMAND_WARNING: {
-			MsgReply(rcvid, EOK, NULL, 0);
-			std::cout << "Airspace separation constraint of aircraft with ID: "
-					<< msg.commandBody.one.aircraftID << " and position: "
-					<< msg.commandBody.one.position << std::endl;
-			break;
-		}
-		case COMMAND_GRID:
+		case COMMAND_GRID: //ignoring z-axis, doing x and y (top-view)
 		{
 			// Command to print a grid to the console
 			// The sender deletes the arrays allocated for grid printing once we reply, so we need them to stay valid until then.
