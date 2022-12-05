@@ -286,21 +286,32 @@ void ComputerSystem::checkForFutureViolation(
 	// verify at time T + congestionDegreeSeconds for potential collision range
 	int VERTICAL_LIMIT = 1000;
 	int HORIZONTAL_LIMIT = 3000;
-	Vec3 plane1posInCongestionSeconds = plane1.second.currentPosition.sum(
+	Vec3 plane1projection = plane1.second.currentPosition.sum(
 			plane1.second.currentVelocity.scalarMultiplication(
 					congestionDegreeSeconds));
-	Vec3 plane2posInCongestionSeconds = plane2.second.currentPosition.sum(
+	Vec3 plane2projection = plane2.second.currentPosition.sum(
 			plane2.second.currentVelocity.scalarMultiplication(
 					congestionDegreeSeconds));
-	Vec3 distancesBetweenPlanes = plane1posInCongestionSeconds.absoluteDiff(
-			plane2posInCongestionSeconds);
+	Vec3 distancesBetweenPlanes = plane1projection.absoluteDiff(
+			plane2projection);
+	//std::cout << plane1projection << ' ' << plane2projection << ' ' << distancesBetweenPlanes << std::endl;
 // Debug print
 //	cout << "ComputerSystem: " << "Distance between plane " << plane1.first
 //			<< " and " << plane2.first << " is "
 //			<< distancesBetweenPlanes.print() << endl;
-	if ((distancesBetweenPlanes.x <= HORIZONTAL_LIMIT
-			|| distancesBetweenPlanes.y <= HORIZONTAL_LIMIT)
-			&& distancesBetweenPlanes.z <= VERTICAL_LIMIT) {
+	int x1min = plane1projection.x - HORIZONTAL_LIMIT;
+	int x1max = plane1projection.x + HORIZONTAL_LIMIT;
+	int x2min = plane2projection.x - HORIZONTAL_LIMIT;
+	int x2max = plane2projection.x + HORIZONTAL_LIMIT;
+	int y1min = plane1projection.y - HORIZONTAL_LIMIT;
+	int y1max = plane1projection.y + HORIZONTAL_LIMIT;
+	int y2min = plane2projection.y - HORIZONTAL_LIMIT;
+	int y2max = plane2projection.y + HORIZONTAL_LIMIT;
+	int z1min = plane1projection.z - VERTICAL_LIMIT;
+	int z1max = plane1projection.z + VERTICAL_LIMIT;
+	int z2min = plane2projection.z - VERTICAL_LIMIT;
+	int z2max = plane2projection.z + VERTICAL_LIMIT;
+	if ((x1max >= x2min && x2max >= x1min) && (y1max >= y2min && y2max >= y1min) && (z1max >= z2min && z2max >= z1min)) {
 		int coid = ConnectAttach(0, 0, operatorChid, _NTO_SIDE_CHANNEL, 0);
 		OperatorConsoleCommandMessage sendMsg;
 		sendMsg.plane1 = plane1.first;
