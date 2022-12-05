@@ -106,11 +106,13 @@ void Plane::listen() {
 			// We've received a user message.
 			switch (msg.command) {
 			case COMMAND_RADAR_PING: {
+				// The plane responds with its current position and velocity.
 				PlanePositionResponse res { currentPosition, currentVelocity };
 				MsgReply(rcvid, EOK, &res, sizeof(res));
 				break;
 			}
 			case COMMAND_SET_VELOCITY:
+				// The plane accepts a new velocity.
 				currentVelocity = msg.newVelocity;
 				MsgReply(rcvid, EOK, NULL, 0);
 				break;
@@ -129,6 +131,7 @@ void Plane::listen() {
 	}
 }
 
+// Updates the plane's position based on its velocity.
 void Plane::updatePosition() {
 	currentPosition.x += currentVelocity.x * POSITION_UPDATE_INTERVAL_SECONDS;
 	currentPosition.y += currentVelocity.y * POSITION_UPDATE_INTERVAL_SECONDS;

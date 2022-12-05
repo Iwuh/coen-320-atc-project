@@ -37,6 +37,7 @@ void OperatorConsole::run() {
 		return;
 	}
 
+	// Start the console reader thread
 	pthread_t cinReaderThread;
 	std::atomic_bool cinReaderStopFlag;
 	cinReaderStopFlag = false;
@@ -46,6 +47,7 @@ void OperatorConsole::run() {
 	// Start listening for messages
 	listen();
 
+	// Stop the console reader thread
 	cinReaderStopFlag = true;
 	pthread_join(cinReaderThread, NULL);
 }
@@ -57,6 +59,7 @@ void OperatorConsole::listen() {
 		rcvid = MsgReceive(chid, &msg, sizeof(msg), NULL);
 		switch (msg.systemCommandType) {
 		case OPCON_CONSOLE_COMMAND_GET_USER_COMMAND: {
+			// When the computer system asks us, check if any commands are waiting and return the applicable response.
 			pthread_mutex_lock(&mutex);
 			if (responseQueue.empty()) {
 				OperatorConsoleResponseMessage msg;
@@ -71,6 +74,7 @@ void OperatorConsole::listen() {
 			break;
 		}
 		case OPCON_CONSOLE_COMMAND_ALERT: {
+			// Print an alert about an imminent constraint violation to the operator console.
 			cout << "OpConsole: " << "Planes " << msg.plane1 << " and "
 					<< msg.plane2 << " will collide in "
 					<< msg.collisionTimeSeconds << " seconds" << endl;
@@ -138,10 +142,13 @@ void* OperatorConsole::cinRead(void *param) {
 				continue;
 			}
 			try {
+				// Parse the plane number and prepare a response in the queue.
 				int planeNum = std::stoi(tokens[1]);
+
 				OperatorConsoleResponseMessage res;
 				res.userCommandType = OPCON_USER_COMMAND_DISPLAY_PLANE_INFO;
 				res.planeNumber = planeNum;
+
 				pthread_mutex_lock(&mutex);
 				responseQueue.push(res);
 				pthread_mutex_unlock(&mutex);
@@ -158,16 +165,19 @@ void* OperatorConsole::cinRead(void *param) {
 				continue;
 			}
 			try {
+				// Parse the plane number and velocity components and prepare a response.
 				int planeNum = std::stoi(tokens[1]);
 				int components[3];
 				for (size_t i = 0; i < 3; i++) {
 					components[i] = std::stoi(tokens[2 + i]);
 				}
 				Vec3 velocity { components[0], components[1], components[2] };
+
 				OperatorConsoleResponseMessage res;
 				res.userCommandType = OPCON_USER_COMMAND_SET_PLANE_VELOCITY;
 				res.planeNumber = planeNum;
 				res.newVelocity = velocity;
+
 				pthread_mutex_lock(&mutex);
 				responseQueue.push(res);
 				pthread_mutex_unlock(&mutex);
@@ -183,16 +193,19 @@ void* OperatorConsole::cinRead(void *param) {
 				continue;
 			}
 			try {
+				// Parse the new congestion degree and prepare a response.
 				int congestionDegree = std::stoi(tokens[1]);
 				if (congestionDegree < 1) {
 					std::cout << "OpConsole: "
 							<< "Congestion value must be larger than 1" << endl;
 					continue;
 				}
+
 				OperatorConsoleResponseMessage res;
 				res.userCommandType =
 				OPCON_USER_COMMAND_UPDATE_CONGESTION_VALUE;
 				res.newCongestionValue = congestionDegree;
+
 				pthread_mutex_lock(&mutex);
 				responseQueue.push(res);
 				pthread_mutex_unlock(&mutex);
@@ -213,6 +226,7 @@ void* OperatorConsole::cinRead(void *param) {
 	return NULL;
 }
 
+// Breaks up a string by spaces
 void OperatorConsole::tokenize(std::vector<std::string> &dest,
 		std::string &str) {
 	std::stringstream ss(str);

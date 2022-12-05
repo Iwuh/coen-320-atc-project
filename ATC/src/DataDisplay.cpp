@@ -2,7 +2,7 @@
  * DataDisplay.cpp
  *
  *  Created on: Nov. 16, 2022
- *      Author: coen320
+ *      Author: Ben
  */
 
 #include "DataDisplay.h"
@@ -54,6 +54,7 @@ void DataDisplay::receiveMessage() {
 
 		switch (msg.commandType) {
 		case COMMAND_ONE_PLANE: {
+			// Command to display one plane
 			MsgReply(rcvid, EOK, NULL, 0); //sending basic ACK
 			std::cout << "Aircraft ID: " << msg.commandBody.one.aircraftID
 					<< "  " << "Aircraft position: "
@@ -63,6 +64,7 @@ void DataDisplay::receiveMessage() {
 			break;
 		}
 		case COMMAND_MULTIPLE_PLANE: {
+			// Command to display multiple planes
 			MsgReply(rcvid, EOK, NULL, 0);
 			for (size_t i = 0; i < msg.commandBody.multiple.numberOfAircrafts;
 					i++) {
@@ -73,7 +75,6 @@ void DataDisplay::receiveMessage() {
 						<< msg.commandBody.multiple.velocityArray[i]
 						<< std::endl;
 			}
-			//TODO: print data for multiple aircrafts
 			break;
 		}
 		case COMMAND_WARNING: {
@@ -83,14 +84,16 @@ void DataDisplay::receiveMessage() {
 					<< msg.commandBody.one.position << std::endl;
 			break;
 		}
-		case COMMAND_GRID: //ignoring z-axis, doing x and y (top-view)
+		case COMMAND_GRID:
 		{
+			// Command to print a grid to the console
 			// The sender deletes the arrays allocated for grid printing once we reply, so we need them to stay valid until then.
 			std::cout << generateGrid(msg.commandBody.multiple);
 			MsgReply(rcvid, EOK, NULL, 0);
 			break;
 		}
 		case COMMAND_LOG: {
+			// Command to print a grid to the log file
 			std::string grid = generateGrid(msg.commandBody.multiple);
 			MsgReply(rcvid, EOK, NULL, 0);
 			if (fd != -1) {
@@ -113,6 +116,8 @@ void DataDisplay::receiveMessage() {
 	}
 }
 
+// Creates a grid view of the airspace, ignoring z-axis, doing x and y (top-view)
+// Begins with (0,0) in the top-left corner.
 std::string DataDisplay::generateGrid(multipleAircraftDisplay &airspaceInfo) {
 	constexpr int rowSize = 25;
 	constexpr int columnSize = 25;

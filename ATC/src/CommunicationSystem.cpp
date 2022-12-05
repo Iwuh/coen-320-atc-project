@@ -15,6 +15,7 @@ CommunicationSystem::CommunicationSystem(std::vector<Plane> &planes) :
 
 }
 
+// Sets the velocity of the plane with a given ID.
 bool CommunicationSystem::send(int planeNumber, Vec3 &newVelocity) {
 	for (size_t i = 0; i < planes.size(); i++) {
 		if (planes[i].getPlaneId() == planeNumber) {
@@ -24,6 +25,7 @@ bool CommunicationSystem::send(int planeNumber, Vec3 &newVelocity) {
 	return false;
 }
 
+// Sets the velocity of a specific plane object.
 bool CommunicationSystem::send(Plane &R, Vec3 &newVelocity) {
 	int planeChid = R.getChid(); //for sending to correct plane
 

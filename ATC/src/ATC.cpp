@@ -17,6 +17,7 @@
 #include "InputStrings.h"
 #include "constants.h"
 
+// Create files on disk for the given test inputs.
 void writeFiles() {
 	int fdlow = creat("/data/home/qnxuser/lowload.txt",
 	S_IRUSR | S_IWUSR | S_IXUSR);
@@ -40,6 +41,7 @@ void writeFiles() {
 	}
 }
 
+// Read start parameters for each plane from a given file.
 std::vector<PlaneStartParams> readFile(std::string filePath) {
 	std::vector<PlaneStartParams> planes;
 	std::ifstream input(filePath);
@@ -78,6 +80,7 @@ void computerSystemDemo() {
 		filePath = "/data/home/qnxuser/highload.txt";
 	}
 
+	// Initialize the planes (without starting their threads).
 	std::vector<PlaneStartParams> params = readFile(filePath);
 	std::vector<Plane> planes;
 	for (size_t i = 0; i < params.size(); i++) {
@@ -89,10 +92,12 @@ void computerSystemDemo() {
 	int numOfPlanes = planes.size();
 	pthread_t planeThreads[numOfPlanes];
 
+	// Start each plane thread one by one.
 	for (size_t i = 0; i < planes.size(); i++) {
 		pthread_create(&planeThreads[i], NULL, &Plane::start, &planes[i]);
 	}
 
+	// Initialize all other components of the system.
 	ComputerSystem compSystem;
 	OperatorConsole opConsole;
 	DataDisplay display;
@@ -104,11 +109,13 @@ void computerSystemDemo() {
 	compSystem.setCommSystem(commSystem);
 	compSystem.setCongestionDegreeSeconds(15);
 
+	// Start the operator console and display threads, and wait for them to open up their message passing channels.
 	pthread_create(&opConsoleTid, NULL, &OperatorConsole::start, &opConsole);
 	pthread_create(&displayTid, NULL, &DataDisplay::start, &display);
 	while (opConsole.getChid() == -1 || display.getChid() == -1)
 		;
 
+	// Give the computer system the necessary channel IDs for IPC then start its thread.
 	compSystem.setDisplayChid(display.getChid());
 	compSystem.setOperatorChid(opConsole.getChid());
 	pthread_create(&compSystemTid, NULL, &ComputerSystem::start, &compSystem);
@@ -122,8 +129,11 @@ void computerSystemDemo() {
 		std::cout << "ComputerSystem: failed to attach to. Exiting thread.";
 		return;
 	}
+
+	// Run the simulation for 180 seconds.
 	std::this_thread::sleep_for(std::chrono::seconds(TIME_RANGE_SECONDS));
 
+	// Terminate the computer system.
 	ComputerSystemMessage msg;
 	msg.command = COMMAND_EXIT_THREAD;
 	if (MsgSend(compSystemCoid, &msg, sizeof(msg), NULL, 0) == 0) {
@@ -134,6 +144,7 @@ void computerSystemDemo() {
 	ConnectDetach(compSystemCoid);
 	pthread_join(compSystemTid, NULL);
 
+	// Terminate the data display.
 	dataDisplayCommandMessage ddMsg;
 	ddMsg.commandType = COMMAND_EXIT_THREAD;
 	int ddCoid = ConnectAttach(0, 0, display.getChid(), _NTO_SIDE_CHANNEL, 0);
@@ -141,6 +152,7 @@ void computerSystemDemo() {
 	ConnectDetach(ddCoid);
 	pthread_join(displayTid, NULL);
 
+	// Terminate the operator console.
 	OperatorConsoleCommandMessage ocMsg;
 	ocMsg.systemCommandType = COMMAND_EXIT_THREAD;
 	int ocCoid = ConnectAttach(0, 0, opConsole.getChid(), _NTO_SIDE_CHANNEL, 0);
@@ -148,6 +160,7 @@ void computerSystemDemo() {
 	ConnectDetach(ocCoid);
 	pthread_join(opConsoleTid, NULL);
 
+	// Terminate each plane.
 	for (size_t i = 0; i < planes.size(); i++) {
 		PlaneCommandMessage exitMsg;
 		exitMsg.command = COMMAND_EXIT_THREAD;
