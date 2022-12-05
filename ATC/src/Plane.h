@@ -1,10 +1,3 @@
-/*
- * Plane.h
- *
- *  Created on: Oct. 24, 2022
- *      Author: Matthew Faigan
- */
-
 #ifndef SRC_PLANE_H_
 #define SRC_PLANE_H_
 
@@ -84,6 +77,7 @@ private:
 	Vec3 currentPosition;
 	Vec3 currentVelocity;
 	bool arrived;
+	bool left;
 	int chid;
 
 public:

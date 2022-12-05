@@ -1,17 +1,10 @@
-/*
- * Plane.cpp
- *
- *  Created on: Oct. 24, 2022
- *      Author: Matthew Faigan
- */
-
 #include "Plane.h"
-#include <iostream>
-using namespace std;
 
+#include <iostream>
 #include <time.h>
 #include <sys/siginfo.h>
-#include <iostream>
+
+#include "constants.h"
 
 ostream& operator<<(ostream &os, const Vec3 &vec) {
 	std::cout << '<' << vec.x << ", " << vec.y << ", " << vec.z << '>';
@@ -20,7 +13,7 @@ ostream& operator<<(ostream &os, const Vec3 &vec) {
 
 Plane::Plane(PlaneStartParams &params) :
 		startParams(params), currentPosition { -1, -1, -1 }, currentVelocity {
-				-1, -1, -1 }, arrived(false), chid(-1) {
+				-1, -1, -1 }, arrived(false), left(false), chid(-1) {
 }
 
 int Plane::getChid() const {
@@ -62,7 +55,7 @@ void Plane::run() {
 	struct itimerspec timerValue;
 	timerValue.it_value.tv_sec = startParams.arrivalTime;
 	timerValue.it_value.tv_nsec = 0;
-	timerValue.it_interval.tv_sec = 1;
+	timerValue.it_interval.tv_sec = POSITION_UPDATE_INTERVAL_SECONDS;
 	timerValue.it_interval.tv_nsec = 0;
 
 	// Start the timer.
@@ -89,6 +82,9 @@ void Plane::listen() {
 					currentPosition = startParams.initialPosition;
 					currentVelocity = startParams.initialVelocity;
 					break;
+				} else if (left) {
+					// If we've left the airspace, stop updating our position.
+					break;
 				}
 				// Once the plane is in the airspace, update its position whenever the timer fires.
 				updatePosition();
@@ -103,11 +99,13 @@ void Plane::listen() {
 			// We've received a user message.
 			switch (msg.command) {
 			case COMMAND_RADAR_PING: {
+				// The plane responds with its current position and velocity.
 				PlanePositionResponse res { currentPosition, currentVelocity };
 				MsgReply(rcvid, EOK, &res, sizeof(res));
 				break;
 			}
 			case COMMAND_SET_VELOCITY:
+				// The plane accepts a new velocity.
 				currentVelocity = msg.newVelocity;
 				MsgReply(rcvid, EOK, NULL, 0);
 				break;
@@ -126,10 +124,20 @@ void Plane::listen() {
 	}
 }
 
+// Updates the plane's position based on its velocity.
 void Plane::updatePosition() {
 	currentPosition.x += currentVelocity.x * POSITION_UPDATE_INTERVAL_SECONDS;
 	currentPosition.y += currentVelocity.y * POSITION_UPDATE_INTERVAL_SECONDS;
 	currentPosition.z += currentVelocity.z * POSITION_UPDATE_INTERVAL_SECONDS;
+	if (currentPosition.x < MIN_AIRSPACE_X_BOUND
+			|| currentPosition.x > MAX_AIRSPACE_X_BOUND
+			|| currentPosition.y < MIN_AIRSPACE_Y_BOUND
+			|| currentPosition.y > MAX_AIRSPACE_Y_BOUND
+			|| currentPosition.z < MIN_AIRSPACE_Z_BOUND
+			|| currentPosition.z > MAX_AIRSPACE_Z_BOUND) {
+		left = true;
+		currentPosition = { -1, -1, -1 };
+	}
 }
 
 void* Plane::start(void *context) {

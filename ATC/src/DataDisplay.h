@@ -1,10 +1,3 @@
-/*
- * DataDisplay.h
- *
- *  Created on: Nov. 16, 2022
- *      Author: coen320
- */
-
 #ifndef SRC_DATADISPLAY_H_
 #define SRC_DATADISPLAY_H_
 

@@ -74,6 +74,7 @@ void ComputerSystem::createPeriodicTasks() {
 		return;
 	}
 
+	// For each periodic task, initialize a timer with the associated code and interval.
 	for (int i = 0; i < COMPUTER_SYSTEM_NUM_PERIODIC_TASKS; i++) {
 		periodicTask pt = periodicTasks[i];
 		struct sigevent sigev;
@@ -85,9 +86,9 @@ void ComputerSystem::createPeriodicTasks() {
 					<< "ComputerSystem: failed to initialize timer. Exiting thread.";
 			return;
 		}
-		// Set the timer to fire once at the arrival time, and then every second thereafter.
+
 		struct itimerspec timerValue;
-		timerValue.it_value.tv_sec = 1;
+		timerValue.it_value.tv_sec = pt.taskIntervalSeconds;
 		timerValue.it_value.tv_nsec = 0;
 		timerValue.it_interval.tv_sec = pt.taskIntervalSeconds;
 		timerValue.it_interval.tv_nsec = 0;
@@ -147,10 +148,12 @@ void ComputerSystem::listen() {
 	}
 }
 
+// Creates a plan view of the system using the data display, instructing it to log either to the console or to a file.
 void ComputerSystem::logSystem(bool toFile) {
 	this->airspace = radar.pingAirspace();
 	size_t aircraftCount = airspace.size();
 
+	// Create three separate arrays as per the data display message format.
 	int *idArray = new int[aircraftCount];
 	Vec3 *positionArray = new Vec3[aircraftCount];
 	Vec3 *velocityArray = new Vec3[aircraftCount];
@@ -161,6 +164,7 @@ void ComputerSystem::logSystem(bool toFile) {
 		velocityArray[i] = current.second.currentVelocity;
 	}
 
+	// Construct the message.
 	dataDisplayCommandMessage msg;
 	if (toFile) {
 		msg.commandType = COMMAND_LOG;
@@ -172,6 +176,7 @@ void ComputerSystem::logSystem(bool toFile) {
 	msg.commandBody.multiple.positionArray = positionArray;
 	msg.commandBody.multiple.velocityArray = velocityArray;
 
+	// Send the message and then clean up the allocated memory.
 	int coid = ConnectAttach(0, 0, displayChid, _NTO_SIDE_CHANNEL, 0);
 	if (MsgSend(coid, &msg, sizeof(msg), NULL, 0) == -1) {
 		cout << "ComputerSystem: " << "Couldn't send command to the display.";
@@ -183,6 +188,7 @@ void ComputerSystem::logSystem(bool toFile) {
 	delete[] velocityArray;
 }
 
+// Poll the operator console for a new command from the human operator.
 void ComputerSystem::opConCheck() {
 	int coid = ConnectAttach(0, 0, operatorChid, _NTO_SIDE_CHANNEL, 0);
 	OperatorConsoleCommandMessage sendMsg;
@@ -212,6 +218,7 @@ void ComputerSystem::opConCheck() {
 	}
 }
 
+// Instructs the data display to show a single plane's current parameters.
 void ComputerSystem::sendDisplayCommand(int planeNumber) {
 	// Request radar for an update position on the plane
 	// Open connection to display and send display message
@@ -236,6 +243,7 @@ void ComputerSystem::sendDisplayCommand(int planeNumber) {
 	}
 }
 
+// Updates a plane's velocity via the communication system.
 void ComputerSystem::sendVelocityUpdateToComm(int planeNumber,
 		Vec3 newVelocity) {
 	// Request radar for the plane for sanity purposes
@@ -257,6 +265,7 @@ void ComputerSystem::sendVelocityUpdateToComm(int planeNumber,
 
 }
 
+// Checks each pair of planes in the airspace for constraint violations.
 void ComputerSystem::violationCheck() {
 	this->airspace = radar.pingAirspace();
 	//Perform sequential validation, in case of a collision send out an alert to the operator and an update to the display
@@ -267,6 +276,7 @@ void ComputerSystem::violationCheck() {
 	}
 }
 
+// Checks whether a pair of planes will violate separation constraints at some interval in the future.
 void ComputerSystem::checkForFutureViolation(
 		std::pair<int, PlanePositionResponse> plane1,
 		std::pair<int, PlanePositionResponse> plane2) {
@@ -276,21 +286,33 @@ void ComputerSystem::checkForFutureViolation(
 	// verify at time T + congestionDegreeSeconds for potential collision range
 	int VERTICAL_LIMIT = 1000;
 	int HORIZONTAL_LIMIT = 3000;
-	Vec3 plane1posInCongestionSeconds = plane1.second.currentPosition.sum(
+	Vec3 plane1projection = plane1.second.currentPosition.sum(
 			plane1.second.currentVelocity.scalarMultiplication(
 					congestionDegreeSeconds));
-	Vec3 plane2posInCongestionSeconds = plane2.second.currentPosition.sum(
+	Vec3 plane2projection = plane2.second.currentPosition.sum(
 			plane2.second.currentVelocity.scalarMultiplication(
 					congestionDegreeSeconds));
-	Vec3 distancesBetweenPlanes = plane1posInCongestionSeconds.absoluteDiff(
-			plane2posInCongestionSeconds);
+	Vec3 distancesBetweenPlanes = plane1projection.absoluteDiff(
+			plane2projection);
+	//std::cout << plane1projection << ' ' << plane2projection << ' ' << distancesBetweenPlanes << std::endl;
 // Debug print
 //	cout << "ComputerSystem: " << "Distance between plane " << plane1.first
 //			<< " and " << plane2.first << " is "
 //			<< distancesBetweenPlanes.print() << endl;
-	if ((distancesBetweenPlanes.x <= HORIZONTAL_LIMIT
-			|| distancesBetweenPlanes.y <= HORIZONTAL_LIMIT)
-			&& distancesBetweenPlanes.z <= VERTICAL_LIMIT) {
+	// 3D overlap algorithm based on https://stackoverflow.com/a/20925869
+	int x1min = plane1projection.x - HORIZONTAL_LIMIT;
+	int x1max = plane1projection.x + HORIZONTAL_LIMIT;
+	int x2min = plane2projection.x - HORIZONTAL_LIMIT;
+	int x2max = plane2projection.x + HORIZONTAL_LIMIT;
+	int y1min = plane1projection.y - HORIZONTAL_LIMIT;
+	int y1max = plane1projection.y + HORIZONTAL_LIMIT;
+	int y2min = plane2projection.y - HORIZONTAL_LIMIT;
+	int y2max = plane2projection.y + HORIZONTAL_LIMIT;
+	int z1min = plane1projection.z - VERTICAL_LIMIT;
+	int z1max = plane1projection.z + VERTICAL_LIMIT;
+	int z2min = plane2projection.z - VERTICAL_LIMIT;
+	int z2max = plane2projection.z + VERTICAL_LIMIT;
+	if ((x1max >= x2min && x2max >= x1min) && (y1max >= y2min && y2max >= y1min) && (z1max >= z2min && z2max >= z1min)) {
 		int coid = ConnectAttach(0, 0, operatorChid, _NTO_SIDE_CHANNEL, 0);
 		OperatorConsoleCommandMessage sendMsg;
 		sendMsg.plane1 = plane1.first;
